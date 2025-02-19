@@ -6,10 +6,9 @@ import { database } from "./config/db";
 import userRouter from "./routes/user.route";
 import appointmentRouter from "./routes/appointment.route";
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 database();
-
 const app = express();
 
 app.use(express.json());
