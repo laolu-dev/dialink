@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
-import 'package:dialink/src/app/shell/home_shell.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/data/appointments/models/appointment_model.dart';
@@ -18,6 +16,7 @@ import 'package:dialink/src/shared/widgets/message_state.dart';
 import 'package:dialink/src/shared/widgets/notice_banner.dart';
 import 'package:dialink/src/shared/widgets/skeleton.dart';
 import 'package:dialink/src/shared/widgets/visit_card.dart';
+import 'package:go_router/go_router.dart';
 
 /// The Home tab: a greeting, the next visit and shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -29,7 +28,6 @@ class HomeScreen extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     final appointments = ref.watch(appointmentsProvider(user.id));
-    final selectTab = ref.read(selectedTabProvider.notifier).select;
     final p = context.palette;
 
     return SafeArea(
@@ -83,7 +81,7 @@ class HomeScreen extends ConsumerWidget {
                           message:
                               "You need to confirm it before you can book.",
                           onTap: () =>
-                              context.router.pushNamed(RouteName.verify),
+                              context.push(Routes.verifyEmail),
                         ),
                         20.0.verticalSpacing,
                       ],
@@ -129,7 +127,7 @@ class HomeScreen extends ConsumerWidget {
                 child: PrimaryButton(
                   label: "Book a visit",
                   icon: Iconsax.add,
-                  onPressed: () => selectTab(ShellTab.find),
+                  onPressed: () => context.go(Routes.find),
                 ),
               ),
             ],

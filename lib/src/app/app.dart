@@ -3,34 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:toastification/toastification.dart';
 
 import 'package:dialink/src/app/router/app_router.dart';
-import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/app/theme/app_themes.dart';
 import 'package:dialink/src/app/theme/theme_builder.dart';
 import 'package:dialink/src/app/theme/theme_settings_controller.dart';
 import 'package:dialink/src/core/services/accessibility/reduce_transparency.dart';
-import 'package:dialink/src/shared/controllers/session_controller.dart';
 
 class Dialink extends ConsumerWidget {
   const Dialink({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Signing in opens home; signing out, or the server ending the session,
-    // goes back to the start.
-    ref.listen(sessionProvider, (previous, next) {
-      final wasSignedIn = previous?.value != null;
-      final isSignedIn = next.value != null;
-      final navigator = AppRouter.instance.routerKey.currentState;
-      if (navigator == null || next.isLoading) return;
-
-      if (!wasSignedIn && isSignedIn) {
-        navigator.pushNamedAndRemoveUntil(RouteName.home, (route) => false);
-      } else if (wasSignedIn && !isSignedIn) {
-        navigator.pushNamedAndRemoveUntil(RouteName.landing, (route) => false);
-      }
-    });
-
     final settings = ref.watch(themeSettingsControllerProvider);
     final reduceTransparency = ref.watch(reduceTransparencyProvider);
     final id = settings.theme;
@@ -45,13 +28,12 @@ class Dialink extends ConsumerWidget {
     }
 
     return ToastificationWrapper(
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Dialink',
+        routerConfig: ref.watch(appRouterProvider),
         theme: themeFor(Brightness.light),
         darkTheme: themeFor(Brightness.dark),
         themeMode: settings.mode,
-        navigatorKey: AppRouter.instance.routerKey,
-        onGenerateRoute: (settings) => AppRouter.instance.routes(settings),
         builder: (context, child) => _Accessibility(id: id, child: child!),
       ),
     );

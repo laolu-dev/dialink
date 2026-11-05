@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/shell/home_shell.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/data/appointments/models/appointment_model.dart';
 import 'package:dialink/src/shared/controllers/appointments_controller.dart';
@@ -11,6 +10,8 @@ import 'package:dialink/src/shared/widgets/headers.dart';
 import 'package:dialink/src/shared/widgets/message_state.dart';
 import 'package:dialink/src/shared/widgets/skeleton.dart';
 import 'package:dialink/src/shared/widgets/visit_card.dart';
+import 'package:dialink/src/app/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// The Visits tab: upcoming and past appointments.
 class VisitsScreen extends ConsumerStatefulWidget {
@@ -108,9 +109,7 @@ class _VisitsScreenState extends ConsumerState<VisitsScreen> {
                         ? "Visits you've had will show here."
                         : "Book a visit and it will show here.",
                     actionLabel: _showPast ? null : "Find a doctor",
-                    onAction: () => ref
-                        .read(selectedTabProvider.notifier)
-                        .select(ShellTab.find),
+                    onAction: () => context.go(Routes.find),
                   ),
                 ],
               )

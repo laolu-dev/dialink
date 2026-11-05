@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
-import 'package:dialink/src/features/account/views/account_screen.dart';
-import 'package:dialink/src/features/booking/views/find_doctor_screen.dart';
-import 'package:dialink/src/features/home/views/home_screen.dart';
-import 'package:dialink/src/features/visits/views/visits_screen.dart';
 import 'package:dialink/src/shared/widgets/app_surface.dart';
-part 'home_shell.g.dart';
 
 enum ShellTab {
   home("Home", Iconsax.home_2),
@@ -24,14 +18,6 @@ enum ShellTab {
   final IconData icon;
 }
 
-@Riverpod(keepAlive: true)
-class SelectedTab extends _$SelectedTab {
-  @override
-  ShellTab build() => ShellTab.home;
-
-  void select(ShellTab tab) => state = tab;
-}
-
 /// Window widths from here get a side rail instead of bottom tabs, e.g. an
 /// unfolded iPhone Duo (669 pt) or a tablet. Split View can narrow the
 /// window again, so this follows the width, not the device.
@@ -39,33 +25,24 @@ const wideLayoutWidth = 600.0;
 
 /// The signed-in app: four tabs, at the bottom on phones and on the side on
 /// wide screens, as iPhone Duo puts navigation.
-class HomeShell extends ConsumerWidget {
-  const HomeShell({super.key});
+///
+/// Each tab keeps its own state; [navigationShell] keeps the ones off screen
+/// offstage, so they don't hold focus or speak.
+class HomeShell extends StatelessWidget {
+  const HomeShell({super.key, required this.navigationShell});
 
-  static const _pages = [
-    HomeScreen(),
-    FindDoctorScreen(),
-    VisitsScreen(),
-    AccountScreen(),
-  ];
+  final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tab = ref.watch(selectedTabProvider);
-    final select = ref.read(selectedTabProvider.notifier).select;
-    final wide = MediaQuery.sizeOf(context).width >= wideLayoutWidth;
-
-    final pages = IndexedStack(
-      index: tab.index,
-      children: [
-        for (final (i, page) in _pages.indexed)
-          // Off-screen tabs keep their state but don't hold focus or speak.
-          TickerMode(
-            enabled: i == tab.index,
-            child: ExcludeSemantics(excluding: i != tab.index, child: page),
-          ),
-      ],
+  Widget build(BuildContext context) {
+    final tab = ShellTab.values[navigationShell.currentIndex];
+    // Tapping the open tab goes back to its first screen.
+    void select(ShellTab next) => navigationShell.goBranch(
+      next.index,
+      initialLocation: next == tab,
     );
+    final wide = MediaQuery.sizeOf(context).width >= wideLayoutWidth;
+    final pages = navigationShell;
 
     if (wide) {
       return _Backdrop(

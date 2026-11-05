@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
@@ -18,6 +17,7 @@ import 'package:dialink/src/shared/widgets/headers.dart';
 import 'package:dialink/src/shared/widgets/initials_avatar.dart';
 import 'package:dialink/src/shared/widgets/message_state.dart';
 import 'package:dialink/src/shared/widgets/skeleton.dart';
+import 'package:go_router/go_router.dart';
 
 /// The Find tab. On wide screens the chosen doctor's times show beside the
 /// list; on phones they open on their own screen.
@@ -184,9 +184,9 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
                       selected: twoPane && _chosen?.id == provider.id,
                       onTap: () => twoPane
                           ? setState(() => _chosen = provider)
-                          : context.router.pushNamed(
-                              RouteName.providerSlots,
-                              arguments: DoctorTimesArgs(provider: provider),
+                          : context.push(
+                              Routes.doctor(provider.id),
+                              extra: DoctorTimesArgs(provider: provider),
                             ),
                       child: Row(
                         spacing: 12,

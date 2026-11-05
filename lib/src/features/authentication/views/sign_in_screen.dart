@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/app/theme/theme_settings_controller.dart';
@@ -11,17 +10,14 @@ import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/core/utils/validators.dart';
 import 'package:dialink/src/features/authentication/controllers/authentication_controller.dart';
 import 'package:dialink/src/features/authentication/widgets/google_button.dart';
-import 'package:dialink/src/features/onboarding/controllers/onboarding_controller.dart';
-import 'package:dialink/src/features/onboarding/views/onboarding_screen.dart';
-import 'package:dialink/src/shared/controllers/session_controller.dart';
 import 'package:dialink/src/shared/utils/keyboard.dart';
 import 'package:dialink/src/shared/utils/toasts.dart';
-import 'package:dialink/src/shared/views/splash_screen.dart';
 import 'package:dialink/src/shared/widgets/app_scaffold.dart';
 import 'package:dialink/src/shared/widgets/app_text_field.dart';
 import 'package:dialink/src/shared/widgets/buttons.dart';
+import 'package:go_router/go_router.dart';
 
-/// The start: restores a saved session, or offers sign-in.
+/// Sign in with email and password, or with Google.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -45,22 +41,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(sessionProvider);
     final controller = ref.watch(authenticationControllerProvider);
     final theme = ref.watch(themeSettingsControllerProvider).theme;
     final p = context.palette;
-
-    // Restoring a saved session, or it failed: the splash, which picks up
-    // from the native launch screen.
-    if (session is! AsyncData) {
-      return SplashScreen(
-        error: session.error,
-        onRetry: () => ref.invalidate(sessionProvider),
-      );
-    }
-
-    // First launch, signed out: show what the app does before sign-in.
-    if (!ref.watch(onboardingSeenProvider)) return const OnboardingScreen();
 
     return AppScaffold(
       makeScrollable: true,
@@ -120,9 +103,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => context.router.pushNamed(
-                        RouteName.forgotPassword,
-                        arguments: email.text.trim(),
+                      onPressed: () => context.push(
+                        Routes.forgotPassword,
+                        extra: email.text.trim(),
                       ),
                       child: const Text("Forgot password?"),
                     ),
@@ -156,7 +139,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                       TextButton(
                         onPressed: () =>
-                            context.router.pushNamed(RouteName.signup),
+                            context.push(Routes.signUp),
                         child: const Text("Create an account"),
                       ),
                     ],

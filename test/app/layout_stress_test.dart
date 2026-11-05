@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:dialink/src/app/shell/home_shell.dart';
 import 'package:dialink/src/app/theme/app_themes.dart';
 import 'package:dialink/src/app/theme/theme_builder.dart';
 import 'package:dialink/src/core/network/page_response.dart';
@@ -29,6 +28,10 @@ import 'package:dialink/src/features/authentication/views/verify_email_screen.da
 import 'package:dialink/src/features/booking/views/doctor_times_screen.dart';
 import 'package:dialink/src/features/onboarding/views/onboarding_screen.dart';
 import 'package:dialink/src/shared/controllers/session_controller.dart';
+import 'package:dialink/src/app/router/app_router.dart';
+import 'package:dialink/src/app/router/routes.dart';
+import 'package:dialink/src/app/shell/home_shell.dart';
+
 
 const _user = UserModel(
   id: 'u1',
@@ -63,14 +66,6 @@ AppointmentModel _appointment(int i) => AppointmentModel(
   status: i.isEven ? AppointmentStatus.confirmed : AppointmentStatus.requested,
   reason: 'Follow-up on test results and a longer note about symptoms',
 );
-
-class _Tab extends SelectedTab {
-  _Tab(this.tab);
-  final ShellTab tab;
-
-  @override
-  ShellTab build() => tab;
-}
 
 class _Session extends Session {
   @override
@@ -176,7 +171,16 @@ const _devices = <_Device>[
   (name: 'tablet', size: Size(1024, 768), text: 1, keyboard: 0),
 ];
 
-final _screens = <String, Widget Function()>{
+/// The tabs open through the router, as in the app.
+const _tabs = {
+  'home tab': Routes.home,
+  'find tab': Routes.find,
+  'visits tab': Routes.visits,
+  'account tab': Routes.account,
+};
+
+final _screens = <String, Widget Function()?>{
+  for (final tab in _tabs.keys) tab: null,
   'onboarding': () => const OnboardingScreen(),
   'landing': () => const SignInScreen(),
   'signup': () => const SignUpScreen(),
@@ -185,10 +189,6 @@ final _screens = <String, Widget Function()>{
   'change password': () => const ChangePasswordScreen(),
   'appearance': () => const AppearanceScreen(),
   'patient profile': () => const PatientProfileScreen(),
-  'home tab': () => const HomeShell(),
-  'find tab': () => const HomeShell(),
-  'visits tab': () => const HomeShell(),
-  'account tab': () => const HomeShell(),
   'slots': () =>
       const DoctorTimesScreen(args: DoctorTimesArgs(provider: _provider)),
 };
@@ -220,25 +220,40 @@ void main() {
               appointmentRepoProvider.overrideWithValue(_Appointments()),
               doctorRepoProvider.overrideWithValue(_Doctors()),
               userRepoProvider.overrideWithValue(_Users()),
-              if (name.endsWith(' tab'))
-                selectedTabProvider.overrideWith(
-                  () => _Tab(ShellTab.values.byName(name.split(' ').first)),
-                ),
             ],
-            child: MaterialApp(
-              theme: buildTheme(AppThemeId.clinical, Brightness.light),
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(device.text)),
-                child: child!,
-              ),
-              home: screen(),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final theme = buildTheme(AppThemeId.clinical, Brightness.light);
+                Widget scaled(BuildContext context, Widget? child) =>
+                    MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaler: TextScaler.linear(device.text)),
+                      child: child!,
+                    );
+                if (screen == null) {
+                  return MaterialApp.router(
+                    theme: theme,
+                    builder: scaled,
+                    routerConfig: ref.watch(appRouterProvider),
+                  );
+                }
+                return MaterialApp(theme: theme, builder: scaled, home: screen());
+              },
             ),
           ),
         );
+        if (_tabs[name] case final location?) {
+          await tester.pump();
+          ProviderScope.containerOf(
+            tester.element(find.byType(MaterialApp)),
+          ).read(appRouterProvider).go(location);
+        }
         await tester.pump(const Duration(milliseconds: 100));
         await tester.pump(const Duration(seconds: 1));
+        if (_tabs.containsKey(name)) {
+          expect(find.byType(HomeShell), findsOneWidget);
+        }
       });
     }
   }

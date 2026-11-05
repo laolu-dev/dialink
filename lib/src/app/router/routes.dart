@@ -1,11 +1,30 @@
-sealed class RouteName {
-  static const String landing = "/";
-  static const String signup = "signup-screen";
-  static const String forgotPassword = "forgot-password-screen";
-  static const String verify = "verify-screen";
-  static const String home = "home-screen";
-  static const String providerSlots = "provider-slots-screen";
-  static const String patientProfile = "patient-profile-screen";
-  static const String appearance = "appearance-screen";
-  static const String changePassword = "change-password-screen";
+/// Every screen's location. Screens navigate with these and go_router, e.g.
+/// `context.push(Routes.verifyEmail)`.
+abstract final class Routes {
+  /// Restoring a saved session, or showing why it couldn't be.
+  static const splash = '/splash';
+
+  // Signed out.
+  static const welcome = '/welcome';
+  static const signIn = '/sign-in';
+  static const signUp = '/sign-up';
+
+  /// Open signed in too, from changing a password.
+  static const forgotPassword = '/forgot-password';
+
+  // The tabs.
+  static const home = '/home';
+  static const find = '/find';
+  static const visits = '/visits';
+  static const account = '/account';
+
+  // Signed in, over the tabs.
+  static const verifyEmail = '/verify-email';
+  static const details = '/account/details';
+  static const appearance = '/account/appearance';
+  static const changePassword = '/account/change-password';
+
+  /// A doctor's free times. Pass `DoctorTimesArgs` as `extra` when the
+  /// doctor is already loaded, or to reschedule.
+  static String doctor(String id) => '/doctors/$id';
 }

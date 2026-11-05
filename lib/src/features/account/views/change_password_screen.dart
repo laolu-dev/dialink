@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/network/result.dart';
@@ -13,6 +12,7 @@ import 'package:dialink/src/shared/utils/toasts.dart';
 import 'package:dialink/src/shared/widgets/app_scaffold.dart';
 import 'package:dialink/src/shared/widgets/app_text_field.dart';
 import 'package:dialink/src/shared/widgets/buttons.dart';
+import 'package:go_router/go_router.dart';
 
 /// Changing the password signs out every other device; this one stays signed in.
 class ChangePasswordScreen extends ConsumerStatefulWidget {
@@ -95,7 +95,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               12.0.verticalSpacing,
               TextButton(
                 onPressed: () =>
-                    context.router.pushNamed(RouteName.forgotPassword),
+                    context.push(Routes.forgotPassword),
                 child: const Text("Forgotten your current password?"),
               ),
             ],

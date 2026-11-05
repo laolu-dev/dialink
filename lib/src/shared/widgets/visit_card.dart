@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/network/result.dart';
@@ -20,6 +19,7 @@ import 'package:dialink/src/shared/widgets/app_surface.dart';
 import 'package:dialink/src/shared/widgets/dialogs.dart';
 import 'package:dialink/src/shared/widgets/initials_avatar.dart';
 import 'package:dialink/src/shared/widgets/status_chip.dart';
+import 'package:go_router/go_router.dart';
 
 /// One appointment, with the actions it still allows.
 class VisitCard extends ConsumerWidget {
@@ -105,9 +105,9 @@ class VisitCard extends ConsumerWidget {
                       ),
                       onPressed: busy
                           ? null
-                          : () => context.router.pushNamed(
-                              RouteName.providerSlots,
-                              arguments: DoctorTimesArgs(
+                          : () => context.push(
+                              Routes.doctor(provider.value!.id),
+                              extra: DoctorTimesArgs(
                                 provider: provider.value!,
                                 reschedule: appointment,
                               ),

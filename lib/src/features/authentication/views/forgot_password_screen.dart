@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/core/network/result.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/core/utils/validators.dart';
@@ -13,6 +12,8 @@ import 'package:dialink/src/shared/widgets/app_scaffold.dart';
 import 'package:dialink/src/shared/widgets/app_text_field.dart';
 import 'package:dialink/src/shared/widgets/buttons.dart';
 import 'package:dialink/src/shared/widgets/headers.dart';
+import 'package:dialink/src/app/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// Asks for a reset email, then takes the code from it and a new password.
 ///
@@ -149,11 +150,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     switch (result) {
       case Success(value: AuthAction.passwordReset):
         Toasts.success("Password changed. Sign in with your new password.");
-        // Signed out now: the session listener may already have gone back
-        // to the start, taking this screen with it.
-        if (mounted) {
-          context.router.popUntil((route) => route.isFirst);
-        }
+        // Signed out now: the router may already have gone to sign-in.
+        if (mounted) context.go(Routes.signIn);
       case Success():
         if (mounted) setState(() => _emailSent = true);
       case Failure(:final value):

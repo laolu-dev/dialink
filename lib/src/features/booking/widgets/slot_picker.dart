@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
-import 'package:dialink/src/app/shell/home_shell.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/network/result.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
@@ -27,6 +25,7 @@ import 'package:dialink/src/shared/widgets/initials_avatar.dart';
 import 'package:dialink/src/shared/widgets/message_state.dart';
 import 'package:dialink/src/shared/widgets/notice_banner.dart';
 import 'package:dialink/src/shared/widgets/skeleton.dart';
+import 'package:go_router/go_router.dart';
 
 /// Picks a free slot with a provider, a week at a time, in the provider's
 /// zone. On wide screens it sits beside the doctor list.
@@ -147,7 +146,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
                   icon: Iconsax.sms_notification,
                   title: "Confirm your email to book",
                   message: "You can look at times in the meantime.",
-                  onTap: () => context.router.pushNamed(RouteName.verify),
+                  onTap: () => context.push(Routes.verifyEmail),
                 ),
               ],
               16.0.verticalSpacing,
@@ -336,10 +335,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
       case Success(:final value):
         Toasts.success(value);
         if (!mounted) return true;
-        ref.read(selectedTabProvider.notifier).select(ShellTab.visits);
-        context.router.popUntil(
-          (route) => route.settings.name == RouteName.home,
-        );
+        context.go(Routes.visits);
         return true;
       case Failure(:final value):
         Toasts.error(value.message);
@@ -353,7 +349,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
             ref.invalidate(slotsProvider);
           case 'email-not-verified':
             ref.read(sessionProvider.notifier).reload();
-            context.router.pushNamed(RouteName.verify);
+            context.push(Routes.verifyEmail);
         }
         return false;
     }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/app/theme/theme_settings_controller.dart';
@@ -15,6 +14,7 @@ import 'package:dialink/src/shared/widgets/app_surface.dart';
 import 'package:dialink/src/shared/widgets/dialogs.dart';
 import 'package:dialink/src/shared/widgets/headers.dart';
 import 'package:dialink/src/shared/widgets/initials_avatar.dart';
+import 'package:go_router/go_router.dart';
 
 /// The Account tab: the patient, appearance and security.
 class AccountScreen extends ConsumerWidget {
@@ -43,7 +43,7 @@ class AccountScreen extends ConsumerWidget {
                 hint: "Edit your details",
                 child: AppSurface(
                   onTap: () =>
-                      context.router.pushNamed(RouteName.patientProfile),
+                      context.push(Routes.details),
                   child: Row(
                     spacing: 14,
                     children: [
@@ -106,25 +106,25 @@ class AccountScreen extends ConsumerWidget {
                     icon: Iconsax.brush_1,
                     label: "Appearance",
                     detail: settings.theme.label,
-                    onTap: () => context.router.pushNamed(RouteName.appearance),
+                    onTap: () => context.push(Routes.appearance),
                   ),
                   _Row(
                     icon: Iconsax.personalcard,
                     label: "Your details",
                     onTap: () =>
-                        context.router.pushNamed(RouteName.patientProfile),
+                        context.push(Routes.details),
                   ),
                   if (!user.emailVerified)
                     _Row(
                       icon: Iconsax.sms_notification,
                       label: "Confirm your email",
-                      onTap: () => context.router.pushNamed(RouteName.verify),
+                      onTap: () => context.push(Routes.verifyEmail),
                     ),
                   _Row(
                     icon: Iconsax.key,
                     label: "Change password",
                     onTap: () =>
-                        context.router.pushNamed(RouteName.changePassword),
+                        context.push(Routes.changePassword),
                   ),
                 ],
               ),
