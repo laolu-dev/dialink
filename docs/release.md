@@ -21,6 +21,7 @@ allows 500 characters). CI runs `tool/whats_new.sh` to check.
 4. Update `whats_new/<version>.txt`.
 5. Open a pull request from `dev` into `main`, titled `chore(release): <version>`,
    and merge it with a merge commit. Build the store releases from `main`.
+6. Tag the merge commit on `main` with `v<version>` (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
 
 ## Android
 
