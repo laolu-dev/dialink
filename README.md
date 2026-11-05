@@ -1,18 +1,17 @@
 # Dialink
 
-Dialink is a Flutter mobile app designed for booking healthcare appointments. The app includes a landing screen, account creation and login, a user dashboard, and an appointment booking flow for patients and healthcare records.
+Dialink is a Flutter app for patients to find a doctor and book, reschedule
+or cancel visits, on iOS and Android.
 
 ## Overview
 
-The current codebase implements a structured appointment-management experience with:
-
-- a welcome/landing screen
-- sign-up and login screens
-- user profile and appointment dashboard
-- appointment creation with patient details and medical history
-- appointment confirmation or deletion
-- custom theming, fonts, and route navigation
-- state management using Riverpod
+- Onboarding, then sign-in with email and password or Google
+- Home with your next visit, and tabs for Find, Visits and Account
+- Find a doctor by name or specialty, pick a free time and book
+- Upcoming and past visits, with reschedule and cancel
+- Your details, password, and appearance: seven themes (two for
+  accessibility), light and dark, with a matching app icon
+- Phones, tablets and iPhone Duo (side tabs on wide screens)
 
 ## Tech stack
 
@@ -22,74 +21,41 @@ The current codebase implements a structured appointment-management experience w
 - flutter_secure_storage for secure local storage
 - talker packages for logging and debugging
 - toastification for in-app feedback
-- Material 3 design system with custom Poppins and Cooper BT fonts
+- go_router for navigation
+- Seven themes in light and dark, with Plus Jakarta Sans and Atkinson Hyperlegible
 
 ## Project structure
 
 ```text
 lib/
-├── main.dart
-├── src/
-│   ├── config/
-│   │   ├── router/
-│   │   └── theme/
-│   ├── core/
-│   ├── features/
-│   │   ├── authentication/
-│   │   ├── book-appointment/
-│   │   └── landing/
-│   └── widgets/
-├── test/
-├── android/
-├── ios/
-├── assets/
-├── fonts/
-├── pubspec.yaml
-└── README.md
+├── main_dev.dart, main_prod.dart   Entry points, one per flavour
+└── src/
+    ├── bootstrap.dart   Shared startup
+    ├── app/             App widget, env, router, tab shell, themes
+    ├── core/            Network, storage, platform services, logging
+    ├── data/            Repositories and models per API area
+    ├── shared/          Cross-feature controllers, views, widgets
+    └── features/        One folder per screen area
+test/                    Mirrors lib/src
+env/                     Flavour settings (*.example.json committed)
+docs/                    Architecture, environments, theming, release
+tool/                    Icon generator, store-notes check
+whats_new/               Store release notes per version
 ```
+
+See [docs/architecture.md](docs/architecture.md) for the layers and their rules.
 
 ## Getting started
 
-### Prerequisites
-
-- Flutter SDK 3.6 or newer
-- Android Studio / Xcode for device emulation
-- A connected device or emulator
-
-### Install dependencies
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, and
+[docs/environments.md](docs/environments.md) for the flavours. In short:
 
 ```bash
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+cp env/dev.example.json env/dev.json
+flutter run --flavor dev -t lib/main_dev.dart --dart-define-from-file=env/dev.json
 ```
-
-### Run the app
-
-```bash
-flutter run
-```
-
-### iOS-specific note
-
-If the CocoaPods dependencies are not yet installed for the iOS app:
-
-```bash
-cd ios
-pod install
-cd ..
-flutter run
-```
-
-## App flow
-
-1. Launch the landing screen.
-2. Create an account or sign in.
-3. View your appointment list on the home dashboard.
-4. Book a new appointment with patient, hospital, diagnosis, and medical history details.
-5. Accept or delete appointments from the dashboard.
-
-## Notes
-
-This project is structured as a custom Flutter app with a clear feature-first architecture. The authentication and appointment flows are implemented in the app logic and routed through the centralized router configuration.
 
 ## License
 

@@ -32,7 +32,6 @@ import 'package:dialink/src/app/router/app_router.dart';
 import 'package:dialink/src/app/router/routes.dart';
 import 'package:dialink/src/app/shell/home_shell.dart';
 
-
 const _user = UserModel(
   id: 'u1',
   email: 'adaeze.obi-nwankwo@example.test',
@@ -238,7 +237,11 @@ void main() {
                     routerConfig: ref.watch(appRouterProvider),
                   );
                 }
-                return MaterialApp(theme: theme, builder: scaled, home: screen());
+                return MaterialApp(
+                  theme: theme,
+                  builder: scaled,
+                  home: screen(),
+                );
               },
             ),
           ),

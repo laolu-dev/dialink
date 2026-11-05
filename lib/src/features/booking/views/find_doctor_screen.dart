@@ -9,7 +9,6 @@ import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/data/doctors/doctor_repository.dart';
 import 'package:dialink/src/data/doctors/models/provider_model.dart';
-import 'package:dialink/src/features/booking/views/doctor_times_screen.dart';
 import 'package:dialink/src/features/booking/widgets/slot_picker.dart';
 import 'package:dialink/src/shared/utils/keyboard.dart';
 import 'package:dialink/src/shared/widgets/app_surface.dart';

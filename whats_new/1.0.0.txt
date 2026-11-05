@@ -1,0 +1,3 @@
+- A fresh look, with seven themes including two for accessibility, in light and dark.
+- Find a doctor, pick a time and book in a few taps.
+- See your upcoming and past visits, and reschedule or cancel them.

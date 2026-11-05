@@ -12,7 +12,6 @@ import 'package:dialink/src/core/utils/time.dart';
 import 'package:dialink/src/data/appointments/models/appointment_model.dart';
 import 'package:dialink/src/data/appointments/models/appointment_status.dart';
 import 'package:dialink/src/data/doctors/doctor_repository.dart';
-import 'package:dialink/src/features/booking/views/doctor_times_screen.dart';
 import 'package:dialink/src/shared/controllers/appointments_controller.dart';
 import 'package:dialink/src/shared/utils/toasts.dart';
 import 'package:dialink/src/shared/widgets/app_surface.dart';

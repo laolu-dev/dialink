@@ -7,7 +7,6 @@ import 'package:dialink/src/core/network/result.dart';
 import 'package:dialink/src/data/auth/auth_repository.dart';
 import 'package:dialink/src/data/users/models/patient_profile_model.dart';
 import 'package:dialink/src/data/users/user_repository.dart';
-import 'package:dialink/src/features/authentication/controllers/authentication_controller.dart';
 import 'package:dialink/src/shared/controllers/session_controller.dart';
 part 'account_controller.g.dart';
 
@@ -18,7 +17,7 @@ typedef AccountResult = Result<AccountAction, ClientException>;
 
 /// Changes to the signed-in patient's account. The state tracks the last
 /// one, for spinners; each change returns its outcome to the screen that
-/// started it, as in [AuthenticationController].
+/// started it, as with `AuthenticationController`.
 @riverpod
 class AccountController extends _$AccountController {
   @override
