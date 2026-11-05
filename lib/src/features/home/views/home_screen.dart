@@ -80,8 +80,7 @@ class HomeScreen extends ConsumerWidget {
                           title: "Confirm your email",
                           message:
                               "You need to confirm it before you can book.",
-                          onTap: () =>
-                              context.push(Routes.verifyEmail),
+                          onTap: () => context.push(Routes.verifyEmail),
                         ),
                         20.0.verticalSpacing,
                       ],

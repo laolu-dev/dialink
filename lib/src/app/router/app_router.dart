@@ -107,18 +107,24 @@ StatefulShellBranch _tab(
   routes: [GoRoute(path: path, builder: (_, _) => screen, routes: routes)],
 );
 
-GoRoute _over(String path, Widget screen) =>
-    GoRoute(path: path, parentNavigatorKey: _rootKey, builder: (_, _) => screen);
+GoRoute _over(String path, Widget screen) => GoRoute(
+  path: path,
+  parentNavigatorKey: _rootKey,
+  builder: (_, _) => screen,
+);
 
 String? _redirect(Ref ref, String location) {
   final session = ref.read(sessionProvider);
 
   // Restoring a saved session, or it failed: the splash, which picks up
   // from the native launch screen and offers a retry.
-  if (!session.hasValue) return location == Routes.splash ? null : Routes.splash;
+  if (!session.hasValue) {
+    return location == Routes.splash ? null : Routes.splash;
+  }
 
   if (session.value != null) {
-    final leaving = location == Routes.splash || _signedOutOnly.contains(location);
+    final leaving =
+        location == Routes.splash || _signedOutOnly.contains(location);
     return leaving ? Routes.home : null;
   }
 

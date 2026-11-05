@@ -7,16 +7,18 @@ import 'package:dialink/src/core/logging/logger.dart';
 import 'package:dialink/src/core/network/api_endpoints.dart';
 import 'package:dialink/src/core/network/auth_interceptor.dart';
 import 'package:dialink/src/core/storage/token_store.dart';
+
 part 'api_client.g.dart';
 
-/// Override with `--dart-define=API_BASE_URL=https://...` for other environments.
-const String apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'https://dialink-backend-dev.vercel.app',
-);
+/// The API's address, from the flavour's env file. Set at startup in
+/// `bootstrap()`.
+@Riverpod(keepAlive: true)
+String apiBaseUrl(Ref ref) =>
+    throw UnimplementedError('Overridden in bootstrap()');
 
-final BaseOptions _options = BaseOptions(
-  baseUrl: "$apiBaseUrl/api/v1",
+@Riverpod(keepAlive: true)
+BaseOptions apiOptions(Ref ref) => BaseOptions(
+  baseUrl: "${ref.watch(apiBaseUrlProvider)}/api/v1",
   contentType: Headers.jsonContentType,
   // The dev backend can take ~20s to answer after a quiet spell.
   connectTimeout: const Duration(seconds: 30),
@@ -25,7 +27,7 @@ final BaseOptions _options = BaseOptions(
 
 @Riverpod(keepAlive: true)
 AuthInterceptor authInterceptor(Ref ref) => AuthInterceptor(
-  options: _options,
+  options: ref.watch(apiOptionsProvider),
   tokens: ref.watch(tokenStoreProvider),
   refreshPath: ApiEndpoints.refresh,
   publicPaths: ApiEndpoints.public,
@@ -33,7 +35,7 @@ AuthInterceptor authInterceptor(Ref ref) => AuthInterceptor(
 
 @Riverpod(keepAlive: true)
 Dio dio(Ref ref) {
-  Dio dio = Dio(_options);
+  Dio dio = Dio(ref.watch(apiOptionsProvider));
 
   dio.interceptors.addAll([
     ref.watch(authInterceptorProvider),

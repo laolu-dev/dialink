@@ -138,8 +138,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         style: context.textTheme.bodyMedium,
                       ),
                       TextButton(
-                        onPressed: () =>
-                            context.push(Routes.signUp),
+                        onPressed: () => context.push(Routes.signUp),
                         child: const Text("Create an account"),
                       ),
                     ],

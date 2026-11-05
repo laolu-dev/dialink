@@ -1,0 +1,6 @@
+// The prod flavour. Run with --flavor prod (see docs/environments.md).
+APP_BUNDLE_ID = com.dialink.app
+APP_DISPLAY_NAME = Dialink
+// Icon sets in Assets.xcassets, made by tool/generate_app_icon.py.
+APP_ICON_PREFIX = AppIcon
+APP_ALTERNATE_ICONS = AppIcon-Clinical AppIcon-Sage AppIcon-Sunset AppIcon-Midnight AppIcon-HighContrast AppIcon-EasyRead

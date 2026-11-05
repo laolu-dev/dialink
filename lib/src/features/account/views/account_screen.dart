@@ -42,8 +42,7 @@ class AccountScreen extends ConsumerWidget {
                 button: true,
                 hint: "Edit your details",
                 child: AppSurface(
-                  onTap: () =>
-                      context.push(Routes.details),
+                  onTap: () => context.push(Routes.details),
                   child: Row(
                     spacing: 14,
                     children: [
@@ -111,8 +110,7 @@ class AccountScreen extends ConsumerWidget {
                   _Row(
                     icon: Iconsax.personalcard,
                     label: "Your details",
-                    onTap: () =>
-                        context.push(Routes.details),
+                    onTap: () => context.push(Routes.details),
                   ),
                   if (!user.emailVerified)
                     _Row(
@@ -123,8 +121,7 @@ class AccountScreen extends ConsumerWidget {
                   _Row(
                     icon: Iconsax.key,
                     label: "Change password",
-                    onTap: () =>
-                        context.push(Routes.changePassword),
+                    onTap: () => context.push(Routes.changePassword),
                   ),
                 ],
               ),

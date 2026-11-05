@@ -10,8 +10,8 @@ import 'package:flutter/services.dart';
 abstract final class AppIcon {
   static const _channel = MethodChannel('dialink/app_icon');
 
-  /// Sets the alternate icon by its iOS asset or Android activity-alias
-  /// name. Null restores the primary icon.
+  /// Sets the icon by theme name, e.g. "Sage"; null restores the primary
+  /// icon. See `AppThemeId.iconName`.
   static Future<void> set(String? name) async {
     if (defaultTargetPlatform != TargetPlatform.iOS &&
         defaultTargetPlatform != TargetPlatform.android) {

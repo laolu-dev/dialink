@@ -37,10 +37,8 @@ class HomeShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final tab = ShellTab.values[navigationShell.currentIndex];
     // Tapping the open tab goes back to its first screen.
-    void select(ShellTab next) => navigationShell.goBranch(
-      next.index,
-      initialLocation: next == tab,
-    );
+    void select(ShellTab next) =>
+        navigationShell.goBranch(next.index, initialLocation: next == tab);
     final wide = MediaQuery.sizeOf(context).width >= wideLayoutWidth;
     final pages = navigationShell;
 

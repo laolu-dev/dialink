@@ -3,21 +3,28 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 /// Google Sign-In on the device, for an ID token the backend verifies.
 ///
-/// The OAuth client IDs come from `--dart-define`:
+/// The OAuth client IDs come from the flavour's env file, via [configure]:
 /// - `GOOGLE_SERVER_CLIENT_ID`: the Web client, which the backend lists in
 ///   `GOOGLE_CLIENT_IDS`. The ID token is issued for it on both platforms.
 /// - `GOOGLE_IOS_CLIENT_ID`: the iOS client. Its reversed ID must also be a
-///   URL scheme in `ios/Runner/Info.plist`.
+///   URL scheme in `ios/Runner/Info.plist` (see docs/environments.md).
 ///
 /// Android also needs an Android client with the app's SHA-1 in Google Cloud.
 class GoogleAuth {
   GoogleAuth._();
   static final GoogleAuth instance = GoogleAuth._();
 
-  static const _serverClientId = String.fromEnvironment(
-    'GOOGLE_SERVER_CLIENT_ID',
-  );
-  static const _iosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+  String _serverClientId = '';
+  String _iosClientId = '';
+
+  /// Called once at startup, before any sign-in.
+  void configure({
+    required String serverClientId,
+    required String iosClientId,
+  }) {
+    _serverClientId = serverClientId;
+    _iosClientId = iosClientId;
+  }
 
   static bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
 

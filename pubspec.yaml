@@ -51,10 +51,10 @@ flutter:
     # Variable font: the weight is also set on its wght axis, see buildTheme.
     - family: Plus Jakarta Sans
       fonts:
-        - asset: fonts/PlusJakartaSans-Variable.ttf
+        - asset: assets/fonts/PlusJakartaSans-Variable.ttf
 
     - family: Atkinson Hyperlegible
       fonts:
-        - asset: fonts/AtkinsonHyperlegible-Bold.ttf
+        - asset: assets/fonts/AtkinsonHyperlegible-Bold.ttf
           weight: 700
-        - asset: fonts/AtkinsonHyperlegible-Regular.ttf
+        - asset: assets/fonts/AtkinsonHyperlegible-Regular.ttf

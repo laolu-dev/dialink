@@ -1,0 +1,6 @@
+// The dev flavour. Run with --flavor dev (see docs/environments.md).
+APP_BUNDLE_ID = com.dialink.app.dev
+APP_DISPLAY_NAME = Dialink Dev
+// Icon sets in Assets.xcassets, made by tool/generate_app_icon.py.
+APP_ICON_PREFIX = AppIconDev
+APP_ALTERNATE_ICONS = AppIconDev-Clinical AppIconDev-Sage AppIconDev-Sunset AppIconDev-Midnight AppIconDev-HighContrast AppIconDev-EasyRead

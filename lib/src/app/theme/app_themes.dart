@@ -266,14 +266,14 @@ enum AppThemeId {
   /// This theme's app icon, as shown in the app.
   String get iconAsset => 'assets/icons/$name.png';
 
-  /// The home screen icon's iOS asset or Android activity-alias name. The
-  /// primary icons, Glass on iOS and Clinical on Android, are null.
+  /// The home screen icon to ask the platform for, e.g. "Sage"; null is the
+  /// primary icon, Glass on iOS and Clinical on Android. iOS and Android
+  /// turn it into their own icon names, which differ by flavour.
   String? get iconName {
-    final suffix = name[0].toUpperCase() + name.substring(1);
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.iOS => this == glass ? null : 'AppIcon-$suffix',
-      _ => this == clinical ? null : 'Launcher$suffix',
-    };
+    final primary = defaultTargetPlatform == TargetPlatform.iOS
+        ? glass
+        : clinical;
+    return this == primary ? null : name[0].toUpperCase() + name.substring(1);
   }
 
   AppPalette palette(Brightness brightness) =>

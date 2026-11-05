@@ -94,8 +94,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               12.0.verticalSpacing,
               TextButton(
-                onPressed: () =>
-                    context.push(Routes.forgotPassword),
+                onPressed: () => context.push(Routes.forgotPassword),
                 child: const Text("Forgotten your current password?"),
               ),
             ],
