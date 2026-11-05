@@ -14,11 +14,14 @@ allows 500 characters). CI runs `tool/whats_new.sh` to check.
 
 ## Before a release
 
-1. All checks pass on `main`.
+1. Everything for the release is merged into `dev`, and all checks pass there.
 2. Run the prod flavour in release mode on a real iPhone and Android phone.
 3. Check sign-in, booking, rescheduling and cancelling against the
    production API, and an icon change.
 4. Update `whats_new/<version>.txt`.
+5. Open a pull request from `dev` into `main`, titled `chore(release): <version>`,
+   and merge it with a merge commit. Build the store releases from `main`.
+6. Tag the merge commit on `main` with `v<version>` (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
 
 ## Android
 

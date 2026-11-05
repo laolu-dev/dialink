@@ -10,10 +10,23 @@
 
 ## Branches and commits
 
-- Branch from `main`: `feat/…`, `fix/…`, `refactor/…`, `chore/…`, `docs/…`.
+Work flows `feat/…` → `dev` → `main`:
+
+- `main` is what ships. It only changes through a release pull request from
+  `dev`.
+- `dev` is the integration branch. Every change lands here first.
+- Branch from `dev`: `feat/…`, `fix/…`, `refactor/…`, `chore/…`, `docs/…`, and
+  open the pull request back into `dev`. CI must pass before it can merge.
+  While there's one maintainer, review your own PR (read the diff on GitHub)
+  before merging; once there's a second contributor, require their approval.
+  GitHub deletes the branch once it's merged.
 - Write commits in the [Conventional Commits](https://www.conventionalcommits.org)
   style, e.g. `feat(booking): filter doctors by specialty`.
-- Open a pull request into `main`. CI must pass and someone must review it.
+- `main` and `dev` are protected: no direct pushes or force-pushes, and only
+  merge commits are allowed. A check blocks pull requests into `main` that
+  don't come from `dev`.
+- Merge with a merge commit, not a squash, so the commit history (and its
+  `feat`/`fix`/`!` markers) reaches `main` intact.
 
 ## Code
 
