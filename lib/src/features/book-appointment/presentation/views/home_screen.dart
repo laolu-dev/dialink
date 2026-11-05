@@ -1,298 +1,147 @@
-import 'package:dialink/src/config/router/route_names.dart';
-import 'package:dialink/src/core/core.dart';
-import 'package:dialink/src/features/authentication/models/user_model.dart';
-import 'package:dialink/src/features/book-appointment/models/appointment_model.dart';
-import 'package:dialink/src/features/book-appointment/presentation/controller/appointment_controller.dart';
-import 'package:dialink/src/features/book-appointment/presentation/views/appointment_modal.dart';
-import 'package:dialink/src/widgets/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:intl/intl.dart';
 
+import 'package:dialink/src/config/router/route_names.dart';
+import 'package:dialink/src/core/core.dart';
+import 'package:dialink/src/features/authentication/presentation/controller/session_controller.dart';
+import 'package:dialink/src/features/book-appointment/models/appointment_model.dart';
+import 'package:dialink/src/features/book-appointment/presentation/controller/appointment_controller.dart';
+import 'package:dialink/src/features/book-appointment/presentation/views/visits_screen.dart';
+import 'package:dialink/src/features/shell/home_shell.dart';
+import 'package:dialink/src/widgets/common.dart';
+import 'package:dialink/src/widgets/skeleton.dart';
+import 'package:dialink/src/widgets/surface.dart';
+
+/// The Home tab: a greeting, the next visit and shortcuts.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key, required this.user});
-  final UserModel user;
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appointments = ref.watch(fetchAppointmentsProvider(userId: user.id));
+    final user = ref.watch(sessionProvider).value;
+    if (user == null) return const SizedBox.shrink();
 
-    ref.listen(
-      appointmentControllerProvider,
-      (_, state) {
-        state.maybeWhen(
-          data: (message) {
-            if (message != null) {
-              AppConstants.instance.showSuccess(message);
-              ref.invalidate(fetchAppointmentsProvider(userId: user.id));
-            }
-          },
-          error: (e, st) {
-            AppConstants.instance.showError(e.toString());
-          },
-          orElse: () {},
-        );
-      },
-    );
+    final appointments = ref.watch(appointmentsProvider(user.id));
+    final selectTab = ref.read(selectedTabProvider.notifier).select;
+    final p = context.palette;
 
-    return AppScaffold(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
             children: [
-              CircleAvatar(
-                backgroundImage: NetworkImage(
-                  AppConstants.instance.genderPic(user.gender),
-                ),
-              ),
-              12.0.horizontalSpacing,
               Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    text: "Welcome,\t\t",
-                    style: context.textTheme.titleMedium,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await Future.wait([
+                      ref.refresh(appointmentsProvider(user.id).future),
+                      ref.read(sessionProvider.notifier).reload(),
+                    ]);
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                     children: [
-                      TextSpan(
-                        text: user.name,
-                        style: context.textTheme.titleLarge!.copyWith(
-                          color: AppColors.primary,
-                          fontFamily: AppConstants.instance.cooperBtFont,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  DateFormat(
+                                    'EEEE, d MMMM',
+                                  ).format(DateTime.now()),
+                                  style: context.textTheme.bodyMedium!.copyWith(
+                                    color: p.muted,
+                                  ),
+                                ),
+                                Semantics(
+                                  header: true,
+                                  child: Text(
+                                    "Hi, ${user.firstName}",
+                                    style: context.textTheme.headlineMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                      20.0.verticalSpacing,
+                      if (!user.emailVerified) ...[
+                        NoticeBanner(
+                          icon: Iconsax.sms_notification,
+                          title: "Confirm your email",
+                          message:
+                              "You need to confirm it before you can book.",
+                          onTap: () =>
+                              context.router.pushNamed(RouteName.verify),
+                        ),
+                        20.0.verticalSpacing,
+                      ],
+                      const SectionLabel("Next visit"),
+                      switch (appointments) {
+                        AsyncData(:final value) => switch (_nextVisit(value)) {
+                          final next? => VisitCard(appointment: next),
+                          null => AppSurface(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: 4,
+                              children: [
+                                Text(
+                                  "No upcoming visits",
+                                  style: context.textTheme.titleMedium,
+                                ),
+                                Text(
+                                  "Find a doctor and pick a time that suits you.",
+                                  style: context.textTheme.bodyMedium!.copyWith(
+                                    color: p.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        },
+                        AsyncError(:final error) => AppSurface(
+                          child: MessageState.error(
+                            error,
+                            onRetry: () =>
+                                ref.invalidate(appointmentsProvider(user.id)),
+                          ),
+                        ),
+                        _ => const SkeletonCard(lines: 3),
+                      },
                     ],
                   ),
                 ),
               ),
-              InkWell(
-                customBorder: CircleBorder(),
-                child: Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Iconsax.logout_14),
+              // The main action sits low, within thumb reach.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                child: PrimaryButton(
+                  label: "Book a visit",
+                  icon: Iconsax.add,
+                  onPressed: () => selectTab(ShellTab.find),
                 ),
-                onTap: () {
-                  context.router.pushReplacementNamed(RouteName.login);
-                },
               ),
             ],
           ),
-          24.0.verticalSpacing,
-          Expanded(
-            child: appointments.when(
-              data: (appointments) {
-                return RefreshIndicator(
-                  onRefresh: () {
-                    return Future.wait([
-                      ref.refresh(
-                          fetchAppointmentsProvider(userId: user.id).future),
-                    ]);
-                  },
-                  child: ListView.separated(
-                    itemCount: appointments?.length ?? 0,
-                    itemBuilder: (context, index) => _AppointmentTile(
-                      number: index + 1,
-                      appointment: appointments![index],
-                    ),
-                    separatorBuilder: (context, index) => 14.0.verticalSpacing,
-                  ),
-                );
-              },
-              error: (error, st) {
-                return Center(
-                  child: OutlinedButton(
-                    onPressed: () => ref
-                        .invalidate(fetchAppointmentsProvider(userId: user.id)),
-                    child: Text("Refresh"),
-                  ),
-                );
-              },
-              loading: () => Center(child: CircularProgressIndicator()),
-            ),
-          ),
-          24.0.verticalSpacing,
-          Center(
-            child: TextButton(
-              onPressed: () => showAdaptiveDialog(
-                context: context,
-                barrierDismissible: true,
-                barrierColor: AppColors.secondary.withAlpha(250),
-                builder: (context) => BookAppointmentDate(userId: user.id),
-              ),
-              child: Text("Book an Appointment"),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
-}
 
-class _AppointmentTile extends ConsumerWidget {
-  _AppointmentTile({required this.number, required this.appointment});
-
-  final int number;
-  final AppointmentModel appointment;
-
-  final ValueNotifier<bool> _isExpanded = ValueNotifier<bool>(false);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ValueListenableBuilder(
-      valueListenable: _isExpanded,
-      builder: (context, isExpanded, _) {
-        return AnimatedSize(
-          curve: Curves.ease,
-          duration: Durations.medium4,
-          child: GestureDetector(
-            onTap: () => _isExpanded.value = !_isExpanded.value,
-            child: Container(
-              padding: EdgeInsets.all(12),
-              constraints: BoxConstraints(
-                minWidth: context.deviceSize.width,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withAlpha(125)),
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 2,
-                    offset: Offset(2, 2),
-                    color: AppColors.textColor.withValues(alpha: .3),
-                  )
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Appointment #$number",
-                        style: context.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      Icon(switch (isExpanded) {
-                        true => Iconsax.arrow_up_2,
-                        _ => Iconsax.arrow_down_1,
-                      })
-                    ],
-                  ),
-                  if (isExpanded) ...[
-                    Divider(color: AppColors.secondary),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Name",
-                      value: appointment.patientName,
-                    ),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Age",
-                      value: "${appointment.age} years old",
-                    ),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Gender",
-                      value: appointment.gender,
-                    ),
-                    Divider(color: AppColors.secondary),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Date of birth",
-                      value:
-                          AppConstants.instance.dobFormatter(appointment.dob),
-                    ),
-                    if (appointment.allergies.isNotEmpty)
-                      _buildSubFields(
-                        context,
-                        fieldName: "Allergies",
-                        value: appointment.allergies,
-                      ),
-                    if (appointment.nextOfKin.isNotEmpty)
-                      _buildSubFields(
-                        context,
-                        fieldName: "Next of Kin",
-                        value: appointment.nextOfKin,
-                      ),
-                    Divider(color: AppColors.secondary),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Hospital",
-                      value: appointment.hospitalName,
-                    ),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Test",
-                      value: appointment.testName,
-                    ),
-                    if (appointment.medicalHistory.isNotEmpty)
-                      _buildSubFields(
-                        context,
-                        fieldName: "Medical History",
-                        value: appointment.medicalHistory,
-                      ),
-                    Divider(color: AppColors.secondary),
-                    _buildSubFields(
-                      context,
-                      fieldName: "Available date",
-                      value: AppConstants.instance.appointmentDateFormatter(
-                          appointment.appointmentDate),
-                    ),
-                    12.0.verticalSpacing,
-                    Row(
-                      spacing: 12,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => ref
-                              .read(appointmentControllerProvider.notifier)
-                              .deleteAppointment(appointment.id),
-                          child: Text("Delete"),
-                        ),
-                        if (!appointment.isConfirmed)
-                          ElevatedButton(
-                            onPressed: () => ref
-                                .read(appointmentControllerProvider.notifier)
-                                .confirmAppointment(appointment.id),
-                            child: Text("Accept"),
-                          ),
-                      ],
-                    )
-                  ]
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSubFields(
-    BuildContext context, {
-    required String fieldName,
-    required String value,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 6),
-      child: Row(
-        spacing: 8,
-        children: [
-          Text(
-            fieldName,
-            style: context.textTheme.labelLarge
-                ?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: context.textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
+  /// The soonest requested or confirmed visit that hasn't ended.
+  static AppointmentModel? _nextVisit(List<AppointmentModel> appointments) {
+    final now = DateTime.now();
+    final upcoming = appointments
+        .where((a) => a.status.isActive && a.endTime.isAfter(now))
+        .toList();
+    if (upcoming.isEmpty) return null;
+    upcoming.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return upcoming.first;
   }
 }

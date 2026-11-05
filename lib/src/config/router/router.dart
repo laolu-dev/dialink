@@ -1,10 +1,13 @@
 import 'package:dialink/src/config/router/route_names.dart';
-import 'package:dialink/src/features/authentication/models/user_model.dart';
-import 'package:dialink/src/features/authentication/presentation/views/login_screen.dart';
+import 'package:dialink/src/features/authentication/presentation/views/appearance_screen.dart';
+import 'package:dialink/src/features/authentication/presentation/views/change_password_screen.dart';
+import 'package:dialink/src/features/authentication/presentation/views/forgot_password_screen.dart';
+import 'package:dialink/src/features/authentication/presentation/views/patient_profile_screen.dart';
 import 'package:dialink/src/features/authentication/presentation/views/signup_screen.dart';
-// import 'package:dialink/src/features/authentication/presentation/views/verify_email_screen.dart';
-import 'package:dialink/src/features/book-appointment/presentation/views/home_screen.dart';
+import 'package:dialink/src/features/authentication/presentation/views/verify_email_screen.dart';
+import 'package:dialink/src/features/book-appointment/presentation/views/provider_slots_screen.dart';
 import 'package:dialink/src/features/landing/landing_screen.dart';
+import 'package:dialink/src/features/shell/home_shell.dart';
 import 'package:flutter/material.dart';
 
 class AppRouter {
@@ -20,27 +23,60 @@ class AppRouter {
 
     switch (settings.name) {
       case RouteName.landing:
-        return MaterialPageRoute(builder: (context) => LandingScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => LandingScreen(),
+        );
 
       case RouteName.signup:
         return MaterialPageRoute(
+          settings: settings,
           builder: (context) => SignupScreen(),
         );
 
-      case RouteName.login:
+      case RouteName.forgotPassword:
         return MaterialPageRoute(
-          builder: (context) => LoginScreen(),
+          settings: settings,
+          builder: (context) =>
+              ForgotPasswordScreen(email: arg is String ? arg : null),
+        );
+
+      case RouteName.verify:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => VerifyEmailScreen(),
         );
 
       case RouteName.home:
         return MaterialPageRoute(
-          builder: (context) => HomeScreen(user: arg as UserModel),
+          settings: settings,
+          builder: (context) => HomeShell(),
         );
 
-      // case RouteName.verify:
-      //   return MaterialPageRoute(
-      //     builder: (context) => VerifyEmailScreen(email: arg as String),
-      //   );
+      case RouteName.providerSlots:
+        if (arg is! ProviderSlotsArgs) return _unknownRoute();
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => ProviderSlotsScreen(args: arg),
+        );
+
+      case RouteName.appearance:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => AppearanceScreen(),
+        );
+
+      case RouteName.patientProfile:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => PatientProfileScreen(),
+        );
+
+      case RouteName.changePassword:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => ChangePasswordScreen(),
+        );
 
       default:
         return _unknownRoute();
@@ -51,13 +87,8 @@ class AppRouter {
     return MaterialPageRoute(
       builder: (context) {
         return Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            title: Text("Router Error"),
-          ),
-          body: Center(
-            child: Text("Screen does not exist"),
-          ),
+          appBar: AppBar(centerTitle: true, title: Text("Router Error")),
+          body: Center(child: Text("Screen does not exist")),
         );
       },
     );

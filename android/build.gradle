@@ -5,14 +5,18 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+// Gradle 9 removed `buildDir`; the build output still goes to the project's
+// top-level build/ folder, where Flutter looks for it.
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.layout.buildDirectory.value(newBuildDir.dir(project.name))
 }
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
 tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+    delete rootProject.layout.buildDirectory
 }

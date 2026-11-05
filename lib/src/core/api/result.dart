@@ -1,3 +1,5 @@
+import 'package:dialink/src/core/api/exception.dart';
+
 sealed class Result<S, F> {
   const Result();
 
@@ -29,4 +31,13 @@ class Failure<S, F> extends Result<S, F> implements Exception {
   @override
   C _match<C>(C Function(S success) onLeft, C Function(F failure) onRight) =>
       onRight(_value);
+}
+
+/// Runs an API call and turns any error into a [Failure] with a [ClientException].
+Future<Result<T, ClientException>> guard<T>(Future<T> Function() call) async {
+  try {
+    return Success(await call());
+  } catch (e) {
+    return Failure(ClientException.handleException(e));
+  }
 }

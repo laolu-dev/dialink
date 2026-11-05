@@ -5,3 +5,7 @@ export 'utils/extensions.dart';
 export 'api/client/dio.dart';
 export 'api/result.dart';
 export 'api/response/response.dart';
+export 'api/exception.dart';
+export 'utils/time.dart';
+export 'utils/cache.dart';
+export 'utils/enums.dart';

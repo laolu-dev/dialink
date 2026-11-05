@@ -29,6 +29,8 @@ extension BuildContextExtension on BuildContext {
 
   TextTheme get textTheme => Theme.of(this).textTheme;
 
+  AppPalette get palette => Theme.of(this).extension<AppPalette>()!;
+
   NavigatorState get router => AppRouter.instance.routerKey.currentState!;
 }
 
@@ -36,4 +38,12 @@ extension SizedBoxExtension on double {
   SizedBox get verticalSpacing => SizedBox(height: this);
 
   SizedBox get horizontalSpacing => SizedBox(width: this);
+}
+
+extension TextStyleWeight on TextStyle {
+  /// Sets the weight on the variable font's axis too; see `buildTheme`.
+  TextStyle weight(FontWeight weight) => copyWith(
+    fontWeight: weight,
+    fontVariations: [FontVariation.weight(weight.value.toDouble())],
+  );
 }
