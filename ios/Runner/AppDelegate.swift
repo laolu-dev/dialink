@@ -37,7 +37,10 @@ import UIKit
           return
         }
         let app = UIApplication.shared
-        let name = call.arguments as? String
+        // The theme, e.g. "Sage", or nil for the primary icon. Each flavour
+        // has its own icon sets: AppIcon-Sage, or AppIconDev-Sage in dev.
+        let prefix = Bundle.main.object(forInfoDictionaryKey: "DialinkIconPrefix") as? String ?? "AppIcon"
+        let name = (call.arguments as? String).map { "\(prefix)-\($0)" }
         // Changing the icon shows a system alert, so skip it when unchanged.
         guard app.supportsAlternateIcons, app.alternateIconName != name else {
           result(false)

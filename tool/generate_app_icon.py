@@ -14,14 +14,19 @@ It also makes the native launch screens, which show the default theme's icon
 (Glass on iOS, Clinical on Android) on its background, light and dark. The
 app's own splash then takes over in the patient's theme (SplashScreen).
 
-Keep the themes in step with lib/src/config/theme/app_themes.dart.
+The dev flavour gets the same icons with a "DEV" badge, so the two builds
+can sit side by side on one phone: iOS `AppIconDev` and `AppIconDev-<Theme>`
+(chosen by ios/Flutter/dev.xcconfig), Android the same names under
+android/app/src/dev/res, which override main's.
+
+Keep the themes in step with lib/src/app/theme/app_themes.dart.
 """
 
 import json
 import os
 import shutil
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SS = 4  # supersampling factor for smooth edges
@@ -152,6 +157,29 @@ def render(t, variant="any", background=True):
     return img.resize((BASE, BASE), Image.LANCZOS)
 
 
+BADGE_FONT = os.path.join(ROOT, "assets/fonts/AtkinsonHyperlegible-Bold.ttf")
+
+
+def badge(img, centre=0.84, width=0.46):
+    """Marks a dev build: a dark "DEV" pill near the bottom of the icon."""
+    out = img.copy()
+    size = out.size[0]
+    w, h = round(size * width), round(size * width * 0.36)
+    x, y = (size - w) // 2, round(size * centre - h / 2)
+    layer = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.rounded_rectangle([x, y, x + w, y + h], radius=h // 2, fill=(17, 17, 17, 235))
+    font = ImageFont.truetype(BADGE_FONT, round(h * 0.62))
+    draw.text((size / 2, y + h / 2), "DEV", font=font, fill="#FFFFFF", anchor="mm")
+    out = out.convert("RGBA")
+    out.alpha_composite(layer)
+    return out
+
+
+def ios_name(t, dev):
+    return t["ios"].replace("AppIcon", "AppIconDev", 1) if dev else t["ios"]
+
+
 def rounded(img):
     mask = Image.new("L", img.size, 0)
     ImageDraw.Draw(mask).rounded_rectangle(
@@ -167,16 +195,17 @@ def save(img, path, px):
     img.resize((px, px), Image.LANCZOS).save(path, optimize=True)
 
 
-def ios():
+def ios(dev=False):
     catalog = os.path.join(ROOT, "ios/Runner/Assets.xcassets")
+    mark = badge if dev else (lambda img: img)
     for t in THEMES.values():
-        folder = os.path.join(catalog, f"{t['ios']}.appiconset")
+        folder = os.path.join(catalog, f"{ios_name(t, dev)}.appiconset")
         shutil.rmtree(folder, ignore_errors=True)
         os.makedirs(folder)
         # Icons must be opaque; dark and tinted ones may be transparent.
-        render(t).convert("RGB").save(os.path.join(folder, "icon.png"), optimize=True)
-        render(t, "dark").save(os.path.join(folder, "icon-dark.png"), optimize=True)
-        render(t, "tinted").save(os.path.join(folder, "icon-tinted.png"), optimize=True)
+        mark(render(t)).convert("RGB").save(os.path.join(folder, "icon.png"), optimize=True)
+        mark(render(t, "dark")).save(os.path.join(folder, "icon-dark.png"), optimize=True)
+        mark(render(t, "tinted")).save(os.path.join(folder, "icon-tinted.png"), optimize=True)
 
         def entry(filename, appearance=None):
             e = {"filename": filename, "idiom": "universal", "platform": "ios", "size": "1024x1024"}
@@ -199,8 +228,8 @@ def ios():
             )
 
 
-def android():
-    res = os.path.join(ROOT, "android/app/src/main/res")
+def android(dev=False):
+    res = os.path.join(ROOT, f"android/app/src/{'dev' if dev else 'main'}/res")
     densities = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
     anydpi = os.path.join(res, "mipmap-anydpi-v26")
     os.makedirs(anydpi, exist_ok=True)
@@ -209,13 +238,16 @@ def android():
         name = t["android"]
         if not name:
             continue
-        legacy = rounded(render(t))
+        legacy = rounded(badge(render(t)) if dev else render(t))
         # Adaptive icons are 108dp with a 66dp safe zone: shrink the glyph.
         glyph = render(t, background=False)
         inner = round(BASE * 0.74)
         fg = Image.new("RGBA", (BASE, BASE), (0, 0, 0, 0))
         off = (BASE - inner) // 2
         fg.alpha_composite(glyph.resize((inner, inner), Image.LANCZOS), (off, off))
+        if dev:
+            # Inside the 66dp safe zone, below the glyph's centre.
+            fg = badge(fg, centre=0.74, width=0.34)
         bg = gradient(BASE, *t["bg"])
         mono = Image.new("RGBA", (BASE, BASE), (0, 0, 0, 0))
         mono.alpha_composite(
@@ -239,6 +271,8 @@ def android():
                 "</adaptive-icon>\n"
             )
 
+    if dev:
+        return
     # The single-colour background is no longer used.
     old = os.path.join(res, "values/ic_launcher_background.xml")
     if os.path.exists(old):
@@ -337,8 +371,9 @@ def android_splash():
 
 
 if __name__ == "__main__":
-    ios()
-    android()
+    for dev in (False, True):
+        ios(dev)
+        android(dev)
     assets()
     ios_splash()
     android_splash()

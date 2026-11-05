@@ -1,0 +1,6 @@
+{
+  "FLAVOR": "prod",
+  "API_BASE_URL": "https://api.dialink.example",
+  "GOOGLE_SERVER_CLIENT_ID": "",
+  "GOOGLE_IOS_CLIENT_ID": ""
+}

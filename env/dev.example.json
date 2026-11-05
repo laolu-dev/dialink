@@ -1,0 +1,6 @@
+{
+  "FLAVOR": "dev",
+  "API_BASE_URL": "https://dialink-backend-dev.vercel.app",
+  "GOOGLE_SERVER_CLIENT_ID": "",
+  "GOOGLE_IOS_CLIENT_ID": ""
+}

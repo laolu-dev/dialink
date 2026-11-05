@@ -1,28 +1,30 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Dialink",
-            "cwd": "frontend",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "Dialink (profile mode)",
-            "cwd": "frontend",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile"
-        },
-        {
-            "name": "Dialink (release mode)",
-            "cwd": "frontend",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        }
-    ]
+  // Each flavour needs its env file: copy env/<flavour>.example.json to
+  // env/<flavour>.json first (docs/environments.md).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Dialink (dev)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": ["--flavor", "dev", "--dart-define-from-file=env/dev.json"]
+    },
+    {
+      "name": "Dialink (dev, profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "flutterMode": "profile",
+      "args": ["--flavor", "dev", "--dart-define-from-file=env/dev.json"]
+    },
+    {
+      "name": "Dialink (prod, release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "flutterMode": "release",
+      "args": ["--flavor", "prod", "--dart-define-from-file=env/prod.json"]
+    }
+  ]
 }

@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/release
 
 **.g.dart
+# Flavour settings; copy env/<flavour>.example.json (docs/environments.md).
+/env/*.json
+!/env/*.example.json
