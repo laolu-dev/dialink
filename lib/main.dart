@@ -1,11 +1,14 @@
-import 'package:dialink/src/config/config.dart';
-import 'package:dialink/src/core/core.dart';
-import 'package:dialink/src/dialink.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_riverpod_logger/talker_riverpod_logger.dart';
+
+import 'package:dialink/src/app/app.dart';
+import 'package:dialink/src/core/logging/logger.dart';
+import 'package:dialink/src/core/network/api_exception.dart';
+import 'package:dialink/src/core/storage/preferences.dart';
+import 'package:dialink/src/core/utils/time.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +27,7 @@ Future<void> main() async {
       overrides: [preferencesProvider.overrideWithValue(preferences)],
       observers: [
         TalkerRiverpodObserver(
-          talker: AppConstants.instance.talker,
+          talker: talker,
           settings: TalkerRiverpodLoggerSettings(printProviderDisposed: true),
         ),
       ],
