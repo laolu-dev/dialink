@@ -1,40 +1,11 @@
-import 'package:dialink/src/core/utils/enums.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:toastification/toastification.dart';
-
-const String _male =
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShIu93nkUhwwHnxeOf5xkXC_F93lItlkVty1LRMY2L35oNACzMPxoBHllmdYUwqznoLsc&usqp=CAU";
-const String _female =
-    "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/woman-user-circle-black-icon.png";
 
 class AppConstants {
   AppConstants._();
   static final AppConstants _instance = AppConstants._();
   static AppConstants get instance => _instance;
-
-  final String poppinsFont = "Poppins";
-  final String cooperBtFont = "Cooper BT";
-
-  String genderPic(String gender) {
-    final genderType = Gender.values.firstWhere(
-        (type) => type.gender.toLowerCase() == gender.toLowerCase());
-    return switch (genderType) {
-      Gender.male => _male,
-      Gender.female => _female
-    };
-  }
-
-  String dobFormatter(String dob) {
-    final dateTime = DateTime.parse(dob);
-    return DateFormat("yyyy-MM-dd").format(dateTime);
-  }
-
-  String appointmentDateFormatter(String appointmentDate) {
-    final dateTime = DateTime.parse(appointmentDate);
-    return DateFormat("yyyy-MM-dd").format(dateTime);
-  }
 
   final Talker talker = TalkerFlutter.init(
     settings: TalkerSettings(
@@ -62,55 +33,68 @@ class AppConstants {
   }
 
   static String? nameValidator(String name) {
-    final RegExp regex = RegExp(r"^[A-Za-z]+$");
-    final bool isValid = regex.hasMatch(name);
-
-    if (name.isEmpty) {
+    if (name.trim().isEmpty) {
       return 'Enter a name';
-    } else if (!isValid) {
-      return 'Enter a valid name';
+    } else if (name.length > 100) {
+      return 'Use at most 100 characters';
     }
     return null;
   }
 
-  static String? phoneNumberValidator(String phone) {
-    final RegExp regex = RegExp(r"^\d{1,14}$");
-    final bool isValid = regex.hasMatch(phone);
+  /// E.164, e.g. +2348012345678. Empty is allowed when [optional].
+  static String? phoneNumberValidator(String phone, {bool optional = false}) {
+    final RegExp regex = RegExp(r"^\+[1-9]\d{6,14}$");
 
     if (phone.isEmpty) {
-      return 'Enter a phone number';
-    } else if (!isValid) {
-      return 'Enter a valid phone number';
+      return optional ? null : 'Enter a phone number';
+    } else if (!regex.hasMatch(phone)) {
+      return 'Use the international format, e.g. +2348012345678';
     }
     return null;
   }
 
   static String? emailValidator(String email) {
-    final RegExp regex = RegExp(
-        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
-    final bool isValid = regex.hasMatch(email);
+    final RegExp regex = RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 
     if (email.isEmpty) {
-      return 'Enter a email';
-    } else if (!isValid) {
+      return 'Enter an email';
+    } else if (!regex.hasMatch(email.trim())) {
       return 'Enter a valid email';
     }
     return null;
   }
 
-  static String? passwordValidator(String password) {
-    if (password.isEmpty) {
-      return 'Enter a password.';
+  /// For sign-in: the account's existing password may predate the 12-character rule.
+  static String? requiredValidator(
+    String value, {
+    String field = 'this field',
+  }) {
+    if (value.isEmpty) {
+      return 'Enter $field';
     }
     return null;
   }
 
-  static String? confirmPasswordValidator(String? newPassword,
-      {required String oldPassword}) {
-    if (newPassword != oldPassword) {
-      return 'The passwords are not the same.';
-    } else if (newPassword!.isEmpty) {
+  /// For a new password: 12 to 128 characters.
+  static String? passwordValidator(String password) {
+    if (password.isEmpty) {
+      return 'Enter a password.';
+    } else if (password.length < 12) {
+      return 'Use at least 12 characters.';
+    } else if (password.length > 128) {
+      return 'Use at most 128 characters.';
+    }
+    return null;
+  }
+
+  static String? confirmPasswordValidator(
+    String? newPassword, {
+    required String oldPassword,
+  }) {
+    if (newPassword == null || newPassword.isEmpty) {
       return 'required';
+    } else if (newPassword != oldPassword) {
+      return 'The passwords are not the same.';
     }
     return null;
   }
@@ -142,21 +126,46 @@ class AppConstants {
   }
 }
 
-class AppColors {
-  static const Color primary = Color(0xFF6C63FF);
-  static const Color secondary = Color(0xFFA8D5E2);
-  static const Color error = Color(0xFFFF6F61);
-  static const Color success = Color(0xFF9FE6A0);
-  static const Color background = Color(0xFFF7F9FB);
-  static const Color textColor = Color(0xFF3C4043);
-  static const Color white = Colors.white;
-}
-
+/// Paths under `/api/v1`.
 class ApiEndpoints {
-  static const String createAccount = "/accounts";
-  static const String login = "/accounts/login";
-  static const String getAppointments = "/appointments";
-  static const String createAppointment = "/appointments/create";
-  static const String confirmAppointment = "/appointments/confirm";
-  static String deleteAppointment(String id) => "/appointments/delete/$id";
+  static const String signup = "/auth/signup";
+  static const String login = "/auth/login";
+  static const String google = "/auth/google";
+  static const String refresh = "/auth/refresh";
+  static const String logout = "/auth/logout";
+  static const String logoutAll = "/auth/logout-all";
+  static const String verifyEmail = "/auth/verify-email";
+  static const String resendVerification = "/auth/verify-email/resend";
+  static const String forgotPassword = "/auth/forgot-password";
+  static const String resetPassword = "/auth/reset-password";
+  static const String changePassword = "/auth/change-password";
+
+  /// Sent without a token: the server rejects an expired one even here.
+  static const Set<String> public = {
+    signup,
+    login,
+    google,
+    refresh,
+    logout,
+    verifyEmail,
+    forgotPassword,
+    resetPassword,
+  };
+
+  static String user(String id) => "/users/$id";
+  static String patientProfile(String userId) =>
+      "/users/$userId/patient-profile";
+
+  static const String providers = "/providers";
+  static const String specialties = "/providers/specialties";
+  static String provider(String id) => "/providers/$id";
+  static String availability(String providerId) =>
+      "/providers/$providerId/availability";
+
+  static const String appointments = "/appointments";
+  static String userAppointments(String userId) => "/appointments/user/$userId";
+  static String appointment(String id) => "/appointments/$id";
+  static String cancelAppointment(String id) => "/appointments/$id/cancel";
+  static String rescheduleAppointment(String id) =>
+      "/appointments/$id/reschedule";
 }

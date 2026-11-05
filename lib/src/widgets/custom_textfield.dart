@@ -11,6 +11,9 @@ class CustomTextfield extends StatelessWidget {
     this.validator,
     this.maxLength,
     this.maxLines = 1,
+    this.icon,
+    this.autofillHints,
+    this.textInputAction,
     required this.label,
     required this.controller,
   });
@@ -19,56 +22,58 @@ class CustomTextfield extends StatelessWidget {
   final String? hint;
   final int maxLines;
   final int? maxLength;
+  final IconData? icon;
+  final Iterable<String>? autofillHints;
+  final TextInputAction? textInputAction;
   final TextInputType? inputType;
   final TextEditingController controller;
   final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      spacing: 4,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: context.textTheme.labelLarge),
-        TextFormField(
-          controller: controller,
-          keyboardType: inputType,
-          validator: validator,
-          maxLines: maxLines,
-          maxLength: maxLength,
-          buildCounter: switch (maxLength != null) {
-            true => (context,
-                    {required currentLength,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        spacing: 6,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The label is read with the field, not as loose text above it.
+          ExcludeSemantics(
+            child: Text(label, style: context.textTheme.labelLarge),
+          ),
+          Semantics(
+            label: label,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: inputType,
+              textInputAction: textInputAction,
+              autofillHints: autofillHints,
+              validator: validator,
+              maxLines: maxLines,
+              maxLength: maxLength,
+              onTapOutside: (_) => AppConstants.instance.closeKeyboard(),
+              style: context.textTheme.bodyLarge,
+              buildCounter: switch (maxLength != null) {
+                true =>
+                  (
+                    context, {
+                    required currentLength,
                     required isFocused,
-                    required maxLength}) =>
-                Text(
-                  "$currentLength/$maxLength",
-                  style: context.textTheme.labelMedium?.copyWith(
-                    color: AppColors.textColor.withValues(alpha: .4),
+                    required maxLength,
+                  }) => Text(
+                    "$currentLength/$maxLength",
+                    style: context.textTheme.bodySmall,
                   ),
-                ),
-            _ => null
-          },
-          decoration: switch (maxLength != null) {
-            true => InputDecoration(
+                _ => null,
+              },
+              decoration: InputDecoration(
                 hintText: hint,
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.secondary, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: AppColors.secondary.withValues(alpha: .6),
-                    width: 0.5,
-                  ),
-                ),
+                prefixIcon: icon != null ? Icon(icon, size: 20) : null,
               ),
-            _ => InputDecoration(hintText: hint)
-          },
-        ),
-        12.0.verticalSpacing
-      ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -78,6 +83,9 @@ class CustomPasswordTextfield extends StatefulWidget {
     super.key,
     this.hint,
     this.validator,
+    this.isNewPassword = false,
+    this.textInputAction,
+    this.onSubmitted,
     required this.label,
     required this.controller,
   });
@@ -87,45 +95,62 @@ class CustomPasswordTextfield extends StatefulWidget {
   final String? Function(String?)? validator;
   final TextEditingController controller;
 
+  /// Lets the password manager suggest a strong password.
+  final bool isNewPassword;
+  final TextInputAction? textInputAction;
+  final VoidCallback? onSubmitted;
+
   @override
   State<CustomPasswordTextfield> createState() =>
       _CustomPasswordTextfieldState();
 }
 
 class _CustomPasswordTextfieldState extends State<CustomPasswordTextfield> {
-  bool _obscureText = false;
+  bool _visible = false;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      spacing: 4,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.label, style: context.textTheme.labelLarge),
-        TextFormField(
-          obscuringCharacter: '●',
-          controller: widget.controller,
-          validator: widget.validator,
-          obscureText: !_obscureText,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            suffixIcon: IconButton(
-              onPressed: () => setState(() => _obscureText = !_obscureText),
-              icon: Icon(
-                switch (_obscureText) {
-                  false => Iconsax.eye_slash,
-                  _ => Iconsax.eye
-                },
-                color: switch (_obscureText) {
-                  true => AppColors.secondary,
-                  _ => AppColors.textColor.withValues(alpha: .3)
-                },
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        spacing: 6,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: Text(widget.label, style: context.textTheme.labelLarge),
+          ),
+          Semantics(
+            label: widget.label,
+            child: TextFormField(
+              obscuringCharacter: '●',
+              controller: widget.controller,
+              validator: widget.validator,
+              obscureText: !_visible,
+              textInputAction: widget.textInputAction,
+              onFieldSubmitted: (_) => widget.onSubmitted?.call(),
+              onTapOutside: (_) => AppConstants.instance.closeKeyboard(),
+              autofillHints: [
+                widget.isNewPassword
+                    ? AutofillHints.newPassword
+                    : AutofillHints.password,
+              ],
+              style: context.textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                prefixIcon: const Icon(Iconsax.lock, size: 20),
+                suffixIcon: IconButton(
+                  tooltip: _visible ? "Hide password" : "Show password",
+                  onPressed: () => setState(() => _visible = !_visible),
+                  icon: Icon(
+                    _visible ? Iconsax.eye : Iconsax.eye_slash,
+                    color: _visible ? context.palette.primary : null,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        12.0.verticalSpacing
-      ],
+        ],
+      ),
     );
   }
 }

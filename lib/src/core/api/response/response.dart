@@ -2,26 +2,29 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'response.g.dart';
 
-@JsonSerializable(
-  genericArgumentFactories: true,
-  createToJson: false,
-)
-class ApiResponse<T> {
-  ApiResponse({
-    required this.status,
-    required this.message,
-    this.data,
+/// A page of a list endpoint: `{ items, page, size, totalElements }`.
+@JsonSerializable(genericArgumentFactories: true, createToJson: false)
+class PageResponse<T> {
+  const PageResponse({
+    required this.items,
+    required this.page,
+    required this.size,
+    required this.totalElements,
   });
 
-  final String status;
+  final List<T> items;
 
-  final String message;
+  /// Zero-based.
+  final int page;
 
-  final T? data;
+  final int size;
 
-  factory ApiResponse.fromJson(
+  final int totalElements;
+
+  bool get hasMore => (page + 1) * size < totalElements;
+
+  factory PageResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
-  ) =>
-      _$ApiResponseFromJson<T>(json, fromJsonT);
+  ) => _$PageResponseFromJson<T>(json, fromJsonT);
 }

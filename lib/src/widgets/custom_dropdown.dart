@@ -19,41 +19,27 @@ class CustomDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      spacing: 4,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: context.textTheme.labelLarge),
-        DropdownMenu<String>(
-          width: context.deviceSize.width * .5,
-          hintText: hint,
-          controller: controller,
-          textStyle: context.textTheme.labelMedium,
-          trailingIcon: Icon(Iconsax.arrow_down_1),
-          selectedTrailingIcon: Icon(Iconsax.arrow_up_2),
-          inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-                constraints: BoxConstraints(maxHeight: 48),
-              ),
-          menuStyle: MenuStyle(
-          
-            backgroundColor: WidgetStatePropertyAll(AppColors.background),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        spacing: 6,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: context.textTheme.labelLarge),
+          DropdownMenu<String>(
+            expandedInsets: EdgeInsets.zero,
+            hintText: hint,
+            controller: controller,
+            textStyle: context.textTheme.bodyLarge,
+            trailingIcon: const Icon(Iconsax.arrow_down_1),
+            selectedTrailingIcon: const Icon(Iconsax.arrow_up_2),
+            dropdownMenuEntries: [
+              for (final option in options)
+                DropdownMenuEntry<String>(value: option, label: option),
+            ],
           ),
-          dropdownMenuEntries: options
-              .map(
-                (option) => DropdownMenuEntry<String>(
-                  value: option,
-                  label: option,
-                  labelWidget: Text(
-                    option,
-                    style: context.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.textColor),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        12.0.verticalSpacing
-      ],
+        ],
+      ),
     );
   }
 }

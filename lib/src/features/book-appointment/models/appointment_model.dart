@@ -1,5 +1,6 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:json_annotation/json_annotation.dart';
+
+import 'package:dialink/src/core/utils/enums.dart';
 
 part 'appointment_model.g.dart';
 
@@ -7,49 +8,72 @@ part 'appointment_model.g.dart';
 class AppointmentModel {
   const AppointmentModel({
     required this.id,
-    required this.patientName,
-    required this.age,
-    required this.gender,
-    required this.dob,
-    required this.isConfirmed,
-    required this.hospitalName,
-    required this.testName,
-    required this.nextOfKin,
-    required this.allergies,
-    required this.medicalHistory,
-    required this.appointmentDate,
-    required this.version,
+    required this.provider,
+    required this.startTime,
+    required this.endTime,
+    required this.status,
+    this.reason,
+    this.rescheduledFrom,
   });
 
-  @JsonKey(name: "_id")
   final String id;
 
-  final String patientName;
+  final ProviderSummary provider;
 
-  final String age;
+  final DateTime startTime;
 
-  final String gender;
+  final DateTime endTime;
 
-  final String dob;
+  @JsonKey(fromJson: AppointmentStatus.fromJson)
+  final AppointmentStatus status;
 
-  final bool isConfirmed;
+  final String? reason;
 
-  final String hospitalName;
+  /// The appointment this one replaced, if it was rescheduled.
+  final String? rescheduledFrom;
 
-  final String testName;
+  bool get hasStarted => !startTime.isAfter(DateTime.now());
 
-  final String nextOfKin;
+  bool get canCancel => status.isActive;
 
-  final String allergies;
+  bool get canReschedule => status.isActive && !hasStarted;
 
-  final String appointmentDate;
+  bool get canDelete => status == AppointmentStatus.requested;
 
-  @JsonKey(name: "history")
-  final String medicalHistory;
-
-  @JsonKey(name: "__v")
-  final int version;
+  AppointmentModel copyWith({AppointmentStatus? status}) => AppointmentModel(
+    id: id,
+    provider: provider,
+    startTime: startTime,
+    endTime: endTime,
+    status: status ?? this.status,
+    reason: reason,
+    rescheduledFrom: rescheduledFrom,
+  );
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) =>
       _$AppointmentModelFromJson(json);
+}
+
+/// `id` is the provider profile id, as in `/providers/{id}`.
+@JsonSerializable(createToJson: false)
+class ProviderSummary {
+  const ProviderSummary({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.specialty,
+  });
+
+  final String id;
+
+  final String firstName;
+
+  final String lastName;
+
+  final String specialty;
+
+  String get name => 'Dr. $firstName $lastName';
+
+  factory ProviderSummary.fromJson(Map<String, dynamic> json) =>
+      _$ProviderSummaryFromJson(json);
 }
