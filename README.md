@@ -38,7 +38,7 @@ lib/
     └── features/        One folder per screen area
 test/                    Mirrors lib/src
 env/                     Flavour settings (*.example.json committed)
-docs/                    Architecture, environments, theming, release
+docs/                    Architecture, environments, theming, release, ADRs
 tool/                    Icon generator, store-notes check
 whats_new/               Store release notes per version
 ```

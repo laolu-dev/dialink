@@ -58,6 +58,11 @@ or `release/*`. Tags matching `v*` can't be moved or deleted.
 - UI must work in every theme, in light and dark, with large text and on
   narrow and wide screens (`test/app/layout_stress_test.dart`).
 
+## Decisions
+
+Record lasting technical decisions in [docs/adr/](docs/adr/README.md), one
+numbered file each.
+
 ## Versioning
 
 See [docs/release.md](docs/release.md).
