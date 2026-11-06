@@ -10,6 +10,7 @@ class Env {
     required this.apiBaseUrl,
     required this.googleServerClientId,
     required this.googleIosClientId,
+    this.commit = 'local',
   });
 
   /// Reads the env file the app was built with, and checks it is the one for
@@ -31,6 +32,7 @@ class Env {
         'GOOGLE_SERVER_CLIENT_ID',
       ),
       googleIosClientId: const String.fromEnvironment('GOOGLE_IOS_CLIENT_ID'),
+      commit: const String.fromEnvironment('GIT_SHA', defaultValue: 'local'),
     );
   }
 
@@ -38,4 +40,8 @@ class Env {
   final String apiBaseUrl;
   final String googleServerClientId;
   final String googleIosClientId;
+
+  /// The commit this build was made from. CI passes it with
+  /// `--dart-define=GIT_SHA=<sha>`; local builds say `local`.
+  final String commit;
 }
