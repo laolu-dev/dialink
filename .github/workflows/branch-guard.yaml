@@ -1,6 +1,7 @@
 name: Branch guard
 
-# main only takes release pull requests from dev (feat/… → dev → main).
+# main only takes release pull requests from dev, or hotfixes from
+# release/<major>.<minor> (see CONTRIBUTING.md).
 on:
   pull_request:
     branches: [main]
@@ -14,7 +15,10 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          if [ "$HEAD_REF" != "dev" ]; then
-            echo "::error::Pull requests into main must come from dev, not '$HEAD_REF'. Retarget this PR to dev."
-            exit 1
-          fi
+          case "$HEAD_REF" in
+            dev|release/*) echo "Source branch '$HEAD_REF' is allowed." ;;
+            *)
+              echo "::error::Pull requests into main must come from dev or release/<major>.<minor>, not '$HEAD_REF'. Retarget this PR to dev."
+              exit 1
+              ;;
+          esac
