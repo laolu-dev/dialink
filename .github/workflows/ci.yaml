@@ -54,17 +54,38 @@ jobs:
           # Report in the job log only, so the job needs no write access.
           GITLEAKS_ENABLE_COMMENTS: false
 
+  # Docs-only changes skip the platform builds (CI-3). The builds use a
+  # job-level condition, so their required checks report "skipped", which
+  # counts as passing, instead of staying pending (CI-6).
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: tool/ci_changes.sh
+
   android:
     name: Build Android (dev)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: check
+    needs: [check, changes]
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -79,7 +100,8 @@ jobs:
     name: Build iOS (dev, no signing)
     runs-on: macos-latest
     timeout-minutes: 40
-    needs: check
+    needs: [check, changes]
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -89,5 +111,10 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
       - run: cp env/dev.example.json env/dev.json
       - run: flutter build ios --simulator --debug --flavor dev -t lib/main_dev.dart --dart-define-from-file=env/dev.json
