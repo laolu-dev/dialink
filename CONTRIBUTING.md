@@ -10,23 +10,43 @@
 
 ## Branches and commits
 
-Work flows `feat/…` → `dev` → `main`:
+The rules come from the maintainer's version control guide (mobile rules).
+This repo keeps a `dev` integration branch by choice, so work flows
+`feat/…` → `dev` → `main`:
 
 - `main` is what ships. It only changes through a release pull request from
-  `dev`.
+  `dev`, or a hotfix from `release/<major>.<minor>`.
 - `dev` is the integration branch. Every change lands here first.
 - Branch from `dev`: `feat/…`, `fix/…`, `refactor/…`, `chore/…`, `docs/…`, and
   open the pull request back into `dev`. CI must pass before it can merge.
   While there's one maintainer, review your own PR (read the diff on GitHub)
-  before merging; once there's a second contributor, require their approval.
+  before merging. Once there's a second contributor, require their approval.
   GitHub deletes the branch once it's merged.
-- Write commits in the [Conventional Commits](https://www.conventionalcommits.org)
-  style, e.g. `feat(booking): filter doctors by specialty`.
-- `main` and `dev` are protected: no direct pushes or force-pushes, and only
-  merge commits are allowed. A check blocks pull requests into `main` that
-  don't come from `dev`.
-- Merge with a merge commit, not a squash, so the commit history (and its
-  `feat`/`fix`/`!` markers) reaches `main` intact.
+- Title every pull request as a [Conventional Commit](https://www.conventionalcommits.org),
+  e.g. `feat(booking): filter doctors by specialty`. Commits on your branch can
+  be rough: the title is what lands on `dev`.
+
+### Merging
+
+| Into | Method | Why |
+|---|---|---|
+| `dev` | Squash | One Conventional Commit per pull request, titled from the PR |
+| `release/*` | Squash | Each hotfix lands as one commit |
+| `main` | Merge commit | `main` and `dev` keep the same commits, so they never drift apart |
+
+GitHub rulesets enforce this. `main`, `dev` and `release/*` take changes
+only through pull requests with passing checks, and block force-pushes and
+deletion. A check blocks pull requests into `main` that don't come from `dev`
+or `release/*`. Tags matching `v*` can't be moved or deleted.
+
+### Hotfixes during store review
+
+1. Fix it on `dev` first, through a normal pull request.
+2. Cut `release/<major>.<minor>` from `main` if it doesn't exist yet.
+3. Cherry-pick the fix onto a branch from `release/<major>.<minor>`, and
+   open a pull request into it.
+4. Open a pull request from `release/<major>.<minor>` into `main`, and tag
+   the next release candidate.
 
 ## Code
 
