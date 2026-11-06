@@ -111,7 +111,7 @@ class AppointmentController extends _$AppointmentController {
     final userId = ref.read(sessionProvider).value?.id;
     final listProvider = userId == null ? null : appointmentsProvider(userId);
     // Read now: the screen that started the change may be gone when it ends.
-    final list = listProvider != null && ref.exists(listProvider)
+    final list = listProvider != null && ref.read(listProvider.exists)
         ? ref.read(listProvider.notifier)
         : null;
     final container = ref.container;
