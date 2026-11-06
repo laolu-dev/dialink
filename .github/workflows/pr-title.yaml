@@ -1,0 +1,22 @@
+name: PR title
+
+# With squash merges, the pull request title becomes the commit on dev, so it
+# must be a Conventional Commit (PR-4, COMMIT-1).
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: PR title is a Conventional Commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: tool/pr_title.sh
