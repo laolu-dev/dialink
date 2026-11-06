@@ -1,0 +1,7 @@
+# Copy to android/key.properties (gitignored) to sign release builds locally.
+# The release workflow writes this file from GitHub secrets instead.
+# storeFile is relative to android/app.
+storeFile=upload-keystore.jks
+storePassword=<keystore password>
+keyAlias=upload
+keyPassword=<key password>
