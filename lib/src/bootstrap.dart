@@ -20,6 +20,8 @@ import 'package:dialink/src/core/utils/time.dart';
 Future<void> bootstrap(Flavor flavor) async {
   WidgetsFlutterBinding.ensureInitialized();
   final env = Env.fromDefines(flavor);
+  // Ties logs and crash reports to the commit the build came from.
+  talker.info('Dialink ${flavor.name} build from commit ${env.commit}');
 
   // Errors Flutter and the platform catch, in the same log as the rest.
   FlutterError.onError = (details) {
