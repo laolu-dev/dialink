@@ -208,7 +208,7 @@ void controllerTests() {
     // The screen closes; the controller is disposed mid-request.
     screen.close();
     await pumpEventQueue();
-    expect(container.exists(appointmentControllerProvider), isFalse);
+    expect(container.read(appointmentControllerProvider.exists), isFalse);
 
     repo.cancelled.complete(_appointment('a'));
     expect(await change, isA<Success<String, ClientException>>());
