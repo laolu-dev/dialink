@@ -9,9 +9,6 @@ fixes. Builds from `dev` are for testing and aren't supported.
 
 Please don't open a public issue for a security problem.
 
-<!-- TODO(maintainer): choose the reporting channel. Either turn on GitHub
-private vulnerability reporting (Settings > Code security) and keep the line
-below, or replace it with a security contact address. -->
 Report it privately through the repository's **Security** tab, using
 **Report a vulnerability**.
 
