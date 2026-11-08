@@ -30,6 +30,9 @@ abstract final class Routes {
   /// A doctor's free times. Pass `DoctorTimesArgs` as `extra` when the
   /// doctor is already loaded, or to reschedule.
   static String doctor(String id) => '/doctors/$id';
+
+  /// After a booking or move is sent. Takes `BookedArgs` as `extra`.
+  static const booked = '/booked';
 }
 
 /// What [Routes.doctor] takes as `extra`.
@@ -40,4 +43,25 @@ class DoctorTimesArgs {
 
   /// When set, picking a slot moves this appointment instead of booking.
   final AppointmentModel? reschedule;
+}
+
+/// What [Routes.booked] takes as `extra`: the request that was just sent.
+class BookedArgs {
+  const BookedArgs({
+    required this.provider,
+    required this.when,
+    this.reason,
+    this.moved = false,
+  });
+
+  final ProviderModel provider;
+
+  /// The requested time, already formatted in the doctor's zone.
+  final String when;
+
+  /// The patient's note, if they wrote one.
+  final String? reason;
+
+  /// A visit was moved rather than booked.
+  final bool moved;
 }

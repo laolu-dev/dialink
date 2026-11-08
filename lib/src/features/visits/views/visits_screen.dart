@@ -6,6 +6,7 @@ import 'package:dialink/src/core/utils/extensions.dart';
 import 'package:dialink/src/data/appointments/models/appointment_model.dart';
 import 'package:dialink/src/shared/controllers/appointments_controller.dart';
 import 'package:dialink/src/shared/controllers/session_controller.dart';
+import 'package:dialink/src/shared/controllers/visits_view_controller.dart';
 import 'package:dialink/src/shared/widgets/headers.dart';
 import 'package:dialink/src/shared/widgets/message_state.dart';
 import 'package:dialink/src/shared/widgets/skeleton.dart';
@@ -22,8 +23,6 @@ class VisitsScreen extends ConsumerStatefulWidget {
 }
 
 class _VisitsScreenState extends ConsumerState<VisitsScreen> {
-  bool _showPast = false;
-
   /// Requested and confirmed visits that haven't ended are upcoming.
   static bool _isUpcoming(AppointmentModel a) =>
       a.status.isActive && a.endTime.isAfter(DateTime.now());
@@ -33,6 +32,7 @@ class _VisitsScreenState extends ConsumerState<VisitsScreen> {
     final user = ref.watch(sessionProvider).value;
     if (user == null) return const SizedBox.shrink();
 
+    final showPast = ref.watch(visitsShowPastProvider);
     final provider = appointmentsProvider(user.id);
     final appointments = ref.watch(provider);
 
@@ -53,15 +53,16 @@ class _VisitsScreenState extends ConsumerState<VisitsScreen> {
                     ButtonSegment(value: false, label: Text("Upcoming")),
                     ButtonSegment(value: true, label: Text("Past")),
                   ],
-                  selected: {_showPast},
-                  onSelectionChanged: (value) =>
-                      setState(() => _showPast = value.first),
+                  selected: {showPast},
+                  onSelectionChanged: (value) => ref
+                      .read(visitsShowPastProvider.notifier)
+                      .show(past: value.first),
                 ),
                 12.0.verticalSpacing,
                 Expanded(
                   child: switch (appointments) {
                     AsyncData(:final value) => _buildList(
-                      value.where((a) => _isUpcoming(a) != _showPast).toList(),
+                      value.where((a) => _isUpcoming(a) != showPast).toList(),
                       onRefresh: () => ref.refresh(provider.future),
                       onEnd: ref.read(provider.notifier).loadMore,
                     ),
@@ -85,8 +86,9 @@ class _VisitsScreenState extends ConsumerState<VisitsScreen> {
     required Future<void> Function() onRefresh,
     required Future<bool> Function() onEnd,
   }) {
+    final showPast = ref.read(visitsShowPastProvider);
     // Newest first for the past; soonest first for what's coming.
-    if (!_showPast) {
+    if (!showPast) {
       visits.sort((a, b) => a.startTime.compareTo(b.startTime));
     }
 
@@ -104,11 +106,11 @@ class _VisitsScreenState extends ConsumerState<VisitsScreen> {
                   48.0.verticalSpacing,
                   MessageState(
                     icon: Iconsax.calendar_1,
-                    title: _showPast ? "No past visits" : "No upcoming visits",
-                    message: _showPast
+                    title: showPast ? "No past visits" : "No upcoming visits",
+                    message: showPast
                         ? "Visits you've had will show here."
                         : "Book a visit and it will show here.",
-                    actionLabel: _showPast ? null : "Find a doctor",
+                    actionLabel: showPast ? null : "Find a doctor",
                     onAction: () => context.go(Routes.find),
                   ),
                 ],
