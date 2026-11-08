@@ -14,6 +14,7 @@ import 'package:dialink/src/data/doctors/doctor_repository.dart';
 import 'package:dialink/src/data/doctors/models/provider_model.dart';
 import 'package:dialink/src/shared/controllers/appointments_controller.dart';
 import 'package:dialink/src/shared/controllers/session_controller.dart';
+import 'package:dialink/src/shared/utils/announce.dart';
 import 'package:dialink/src/shared/utils/keyboard.dart';
 import 'package:dialink/src/shared/utils/toasts.dart';
 import 'package:dialink/src/shared/widgets/app_surface.dart';
@@ -48,6 +49,11 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
   DateTime? _day;
   SlotModel? _selected;
 
+  /// Why the last booking didn't go through, when the time itself was the
+  /// problem (taken, too soon...). Shown above the times until the patient
+  /// picks again.
+  String? _slotProblem;
+
   ProviderModel get _provider => widget.args.provider;
   bool get _isReschedule => widget.args.reschedule != null;
 
@@ -69,6 +75,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
       _weekStart = _weekStart.add(Duration(days: 7 * weeks));
       _day = null;
       _selected = null;
+      _slotProblem = null;
     });
   }
 
@@ -189,6 +196,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
                             onTap: () => setState(() {
                               _day = _weekStart.add(Duration(days: i));
                               _selected = null;
+                              _slotProblem = null;
                             }),
                           ),
                         ),
@@ -197,6 +205,14 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
                 ),
               ),
               20.0.verticalSpacing,
+              if (_slotProblem case final problem?) ...[
+                NoticeBanner(
+                  icon: Iconsax.calendar_remove,
+                  title: "Pick another time",
+                  message: problem,
+                ),
+                16.0.verticalSpacing,
+              ],
               switch (slots) {
                 AsyncError(:final error) => MessageState.error(
                   error,
@@ -268,7 +284,10 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
                         selected: _selected?.startTime == slot.startTime,
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          setState(() => _selected = slot);
+                          setState(() {
+                            _selected = slot;
+                            _slotProblem = null;
+                          });
                         },
                       ),
                     ),
@@ -304,18 +323,21 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
         reason: _isReschedule ? null : reason,
         confirmLabel: _isReschedule ? "Move visit" : "Confirm booking",
         onConfirm: () async {
-          final booked = await _submit();
-          if (booked && sheet.mounted) Navigator.of(sheet).pop();
+          final outcome = await _submit(slot);
+          // Booked, or the time is no longer bookable: either way this sheet
+          // has nothing left to confirm.
+          if (outcome != _Outcome.failed && sheet.mounted) {
+            Navigator.of(sheet).pop();
+          }
         },
       ),
     );
   }
 
-  /// Returns whether it was booked or moved.
-  Future<bool> _submit() async {
+  /// Books [slot], or moves the visit to it.
+  Future<_Outcome> _submit(SlotModel slot) async {
     closeKeyboard();
     final notifier = ref.read(appointmentControllerProvider.notifier);
-    final slot = _selected!;
     final slotsProvider = _slotsProvider;
 
     final result = _isReschedule
@@ -333,26 +355,46 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
     switch (result) {
       case Success(:final value):
         Toasts.success(value);
-        if (!mounted) return true;
+        if (!mounted) return _Outcome.booked;
         context.go(Routes.visits);
-        return true;
+        return _Outcome.booked;
       case Failure(:final value):
-        Toasts.error(value.message);
-        if (!mounted) return false;
+        if (!mounted) return _Outcome.failed;
         switch (value.type) {
           case 'slot-unavailable' ||
               'outside-schedule' ||
               'too-soon' ||
               'start-in-past':
-            setState(() => _selected = null);
+            // Shown beside the fresh times rather than in a toast, so it's
+            // still there once the sheet has closed.
+            setState(() {
+              _selected = null;
+              _slotProblem = value.message;
+            });
             ref.invalidate(slotsProvider);
+            announce(context, "Pick another time. ${value.message}");
+            return _Outcome.slotGone;
           case 'email-not-verified':
+            Toasts.error(value.message);
             ref.read(sessionProvider.notifier).reload();
             context.push(Routes.verifyEmail);
+          default:
+            Toasts.error(value.message);
         }
-        return false;
+        return _Outcome.failed;
     }
   }
+}
+
+/// How a booking attempt ended.
+enum _Outcome {
+  booked,
+
+  /// The time can't be booked any more: taken, too soon or past.
+  slotGone,
+
+  /// Anything else; the patient can try again from the sheet.
+  failed,
 }
 
 class _DayTile extends StatelessWidget {
