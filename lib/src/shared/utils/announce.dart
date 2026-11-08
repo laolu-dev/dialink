@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,4 +11,12 @@ void announce(BuildContext context, String message) {
     message,
     Directionality.of(context),
   );
+}
+
+/// [announce] for code with no [BuildContext], such as toasts raised by a
+/// controller. Uses the app's only window.
+void announceInApp(String message) {
+  final view = PlatformDispatcher.instance.implicitView;
+  if (view == null) return;
+  SemanticsService.sendAnnouncement(view, message, TextDirection.ltr);
 }
