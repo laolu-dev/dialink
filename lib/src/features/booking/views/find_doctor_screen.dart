@@ -372,14 +372,19 @@ class _SpecialtyChipsState extends ConsumerState<_SpecialtyChips> {
       ),
       // The filter sheet still offers them, with its own retry.
       AsyncError() => const SizedBox.shrink(),
-      _ => const Shimmer(
-        child: Row(
-          spacing: 8,
-          children: [
-            SkeletonBox(width: 56, height: 48, radius: 99),
-            SkeletonBox(width: 120, height: 48, radius: 99),
-            SkeletonBox(width: 104, height: 48, radius: 99),
-          ],
+      // Like the real row, it runs off the edge on narrow phones.
+      _ => const SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: NeverScrollableScrollPhysics(),
+        child: Shimmer(
+          child: Row(
+            spacing: 8,
+            children: [
+              SkeletonBox(width: 56, height: 48, radius: 99),
+              SkeletonBox(width: 120, height: 48, radius: 99),
+              SkeletonBox(width: 104, height: 48, radius: 99),
+            ],
+          ),
         ),
       ),
     };
