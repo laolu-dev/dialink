@@ -12,6 +12,7 @@ import 'package:dialink/src/data/doctors/models/provider_model.dart';
 import 'package:dialink/src/features/booking/widgets/slot_picker.dart';
 import 'package:dialink/src/shared/utils/keyboard.dart';
 import 'package:dialink/src/shared/widgets/app_surface.dart';
+import 'package:dialink/src/shared/widgets/buttons.dart';
 import 'package:dialink/src/shared/widgets/headers.dart';
 import 'package:dialink/src/shared/widgets/initials_avatar.dart';
 import 'package:dialink/src/shared/widgets/message_state.dart';
@@ -132,16 +133,11 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
               _FilterButton(active: _specialty != null, onTap: _openFilters),
             ],
           ),
-          if (_specialty case final specialty?) ...[
-            10.0.verticalSpacing,
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _ActiveFilter(
-                label: specialty,
-                onClear: () => setState(() => _specialty = null),
-              ),
-            ),
-          ],
+          12.0.verticalSpacing,
+          _SpecialtyChips(
+            selected: _specialty,
+            onSelected: (specialty) => setState(() => _specialty = specialty),
+          ),
           12.0.verticalSpacing,
           Expanded(
             child: providers.when(
@@ -149,13 +145,30 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
               data: (page) {
                 final providers = page.items;
                 if (providers.isEmpty) {
+                  // Typed a specialty into the name search: offer it.
+                  final suggestion = _specialty == null
+                      ? _matchingSpecialty(_name)
+                      : null;
+                  if (suggestion != null) {
+                    return MessageState(
+                      icon: Iconsax.search_status,
+                      title: "No doctors named \"$_name\"",
+                      message: "Looking for a specialty instead?",
+                      actionLabel: "Show $suggestion doctors",
+                      onAction: () => setState(() {
+                        search.clear();
+                        _name = '';
+                        _specialty = suggestion;
+                      }),
+                    );
+                  }
                   return MessageState(
                     icon: Iconsax.search_status,
                     title: "No doctors match",
                     message: _specialty == null
-                        ? "Try another name."
-                        : "Try another name or specialty.",
-                    actionLabel: _specialty == null ? null : "Clear filter",
+                        ? "Try another name, or pick a specialty above."
+                        : "Try another name, or show all specialties.",
+                    actionLabel: _specialty == null ? null : "Show all",
                     onAction: () => setState(() => _specialty = null),
                   );
                 }
@@ -231,17 +244,32 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
     );
   }
 
+  /// The first specialty containing [query], ignoring case, once the
+  /// specialties have loaded; null for short or unmatched queries.
+  String? _matchingSpecialty(String query) {
+    if (query.length < 3) return null;
+    final needle = query.toLowerCase();
+    final specialties = ref.read(specialtiesProvider).value ?? const [];
+    for (final specialty in specialties) {
+      if (specialty.toLowerCase().contains(needle)) return specialty;
+    }
+    return null;
+  }
+
   Future<void> _openFilters() async {
     closeKeyboard();
-    final choice = await showDialog<_Filters>(
+    // A sheet, in reach of the thumb, as both platforms expect for filters.
+    final choice = await showModalBottomSheet<_Filters>(
       context: context,
-      builder: (context) => _FilterDialog(specialty: _specialty),
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (context) => _FilterSheet(specialty: _specialty),
     );
     if (choice != null) setState(() => _specialty = choice.specialty);
   }
 }
 
-/// What the filter dialog returns; a null specialty means any.
+/// What the filter sheet returns; a null specialty means any.
 typedef _Filters = ({String? specialty});
 
 class _FilterButton extends StatelessWidget {
@@ -275,36 +303,125 @@ class _FilterButton extends StatelessWidget {
   }
 }
 
-/// The filter that is on, with a way to clear it without opening the dialog.
-class _ActiveFilter extends StatelessWidget {
-  const _ActiveFilter({required this.label, required this.onClear});
+/// Specialties as one-tap filters under the search, so patients who know
+/// what kind of doctor they need don't have to open the filter sheet.
+class _SpecialtyChips extends ConsumerStatefulWidget {
+  const _SpecialtyChips({required this.selected, required this.onSelected});
+
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  ConsumerState<_SpecialtyChips> createState() => _SpecialtyChipsState();
+}
+
+class _SpecialtyChipsState extends ConsumerState<_SpecialtyChips> {
+  final _scroll = ScrollController();
+
+  @override
+  void didUpdateWidget(_SpecialtyChips old) {
+    super.didUpdateWidget(old);
+    // The chosen chip moves to the front; bring the front back into view.
+    if (old.selected != widget.selected && _scroll.hasClients) {
+      _scroll.animateTo(
+        0,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : Durations.medium2,
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = widget.selected;
+    final onSelected = widget.onSelected;
+    final specialties = ref.watch(specialtiesProvider);
+    return switch (specialties) {
+      AsyncData(:final value) => SingleChildScrollView(
+        controller: _scroll,
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          spacing: 8,
+          children: [
+            _Chip(
+              label: "All",
+              selected: selected == null,
+              onTap: () => onSelected(null),
+            ),
+            // The chosen one comes first, so it's always in view.
+            for (final specialty in [
+              ?selected,
+              ...value.where((s) => s != selected),
+            ])
+              _Chip(
+                label: specialty,
+                selected: specialty == selected,
+                onTap: () =>
+                    onSelected(specialty == selected ? null : specialty),
+              ),
+          ],
+        ),
+      ),
+      // The filter sheet still offers them, with its own retry.
+      AsyncError() => const SizedBox.shrink(),
+      _ => const Shimmer(
+        child: Row(
+          spacing: 8,
+          children: [
+            SkeletonBox(width: 56, height: 48, radius: 99),
+            SkeletonBox(width: 120, height: 48, radius: 99),
+            SkeletonBox(width: 104, height: 48, radius: 99),
+          ],
+        ),
+      ),
+    };
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
-  final VoidCallback onClear;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return Semantics(
       button: true,
-      label: "$label filter. Clear",
-      child: ExcludeSemantics(
+      selected: selected,
+      label: label == "All" ? "All specialties" : label,
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        // 48 dp, the larger of the two platforms' minimum targets.
+        constraints: const BoxConstraints(minHeight: 48),
         child: AppSurface(
           radius: 99,
-          padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
-          color: p.tint,
-          borderColor: p.primary,
-          onTap: onClear,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 6,
-            children: [
-              Text(
-                label,
-                style: context.textTheme.labelLarge!.copyWith(color: p.primary),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: selected ? p.primary : null,
+          borderColor: selected ? p.primary : null,
+          onTap: onTap,
+          child: Center(
+            widthFactor: 1,
+            child: Text(
+              label,
+              style: context.textTheme.labelLarge!.copyWith(
+                color: selected ? p.onPrimary : p.text,
               ),
-              Icon(Iconsax.close_circle, size: 18, color: p.primary),
-            ],
+            ),
           ),
         ),
       ),
@@ -312,90 +429,95 @@ class _ActiveFilter extends StatelessWidget {
   }
 }
 
-class _FilterDialog extends ConsumerStatefulWidget {
-  const _FilterDialog({required this.specialty});
+class _FilterSheet extends ConsumerStatefulWidget {
+  const _FilterSheet({required this.specialty});
 
   final String? specialty;
 
   @override
-  ConsumerState<_FilterDialog> createState() => _FilterDialogState();
+  ConsumerState<_FilterSheet> createState() => _FilterSheetState();
 }
 
-class _FilterDialogState extends ConsumerState<_FilterDialog> {
+class _FilterSheetState extends ConsumerState<_FilterSheet> {
   late String? _specialty = widget.specialty;
 
   @override
   Widget build(BuildContext context) {
     final specialties = ref.watch(specialtiesProvider);
 
-    return AlertDialog(
-      title: const Text("Filter doctors"),
-      contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
-      content: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: SectionLabel("Specialty"),
-            ),
-            Flexible(
-              child: switch (specialties) {
-                AsyncData(:final value) => RadioGroup<String>(
-                  groupValue: _specialty ?? '',
-                  onChanged: (value) => setState(
-                    () => _specialty = value == null || value.isEmpty
-                        ? null
-                        : value,
-                  ),
-                  child: ListView(
-                    shrinkWrap: true,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text("Filter doctors", style: context.textTheme.titleLarge),
+          ),
+          16.0.verticalSpacing,
+          const SectionLabel("Specialty"),
+          Flexible(
+            child: switch (specialties) {
+              AsyncData(:final value) => RadioGroup<String>(
+                groupValue: _specialty ?? '',
+                onChanged: (value) => setState(
+                  () => _specialty = value == null || value.isEmpty
+                      ? null
+                      : value,
+                ),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final specialty in ['', ...value])
+                      RadioListTile<String>(
+                        value: specialty,
+                        title: Text(specialty.isEmpty ? "Any" : specialty),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                  ],
+                ),
+              ),
+              AsyncError(:final error) => MessageState.error(
+                error,
+                onRetry: () => ref.invalidate(specialtiesProvider),
+              ),
+              _ => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Shimmer(
+                  child: Column(
+                    spacing: 18,
                     children: [
-                      for (final specialty in ['', ...value])
-                        RadioListTile<String>(
-                          value: specialty,
-                          title: Text(specialty.isEmpty ? "Any" : specialty),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                          ),
-                        ),
+                      SkeletonBox(height: 18),
+                      SkeletonBox(height: 18),
+                      SkeletonBox(height: 18),
                     ],
                   ),
                 ),
-                AsyncError(:final error) => MessageState.error(
-                  error,
-                  onRetry: () => ref.invalidate(specialtiesProvider),
+              ),
+            },
+          ),
+          12.0.verticalSpacing,
+          Row(
+            spacing: 12,
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  label: "Clear",
+                  onPressed: () => Navigator.pop(context, (specialty: null)),
                 ),
-                _ => const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Shimmer(
-                    child: Column(
-                      spacing: 18,
-                      children: [
-                        SkeletonBox(height: 18),
-                        SkeletonBox(height: 18),
-                        SkeletonBox(height: 18),
-                      ],
-                    ),
-                  ),
+              ),
+              Expanded(
+                child: PrimaryButton(
+                  label: "Show doctors",
+                  onPressed: () =>
+                      Navigator.pop(context, (specialty: _specialty)),
                 ),
-              },
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, (specialty: null)),
-          child: const Text("Clear"),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, (specialty: _specialty)),
-          child: const Text("Show doctors"),
-        ),
-      ],
     );
   }
 }
