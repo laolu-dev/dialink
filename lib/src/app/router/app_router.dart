@@ -13,6 +13,7 @@ import 'package:dialink/src/features/authentication/views/forgot_password_screen
 import 'package:dialink/src/features/authentication/views/sign_in_screen.dart';
 import 'package:dialink/src/features/authentication/views/sign_up_screen.dart';
 import 'package:dialink/src/features/authentication/views/verify_email_screen.dart';
+import 'package:dialink/src/features/booking/views/booked_screen.dart';
 import 'package:dialink/src/features/booking/views/doctor_times_screen.dart';
 import 'package:dialink/src/features/booking/views/find_doctor_screen.dart';
 import 'package:dialink/src/features/home/views/home_screen.dart';
@@ -74,6 +75,13 @@ GoRouter appRouter(Ref ref) {
           final DoctorTimesArgs args => DoctorTimesScreen(args: args),
           _ => DoctorTimesLoader(doctorId: state.pathParameters['id']!),
         },
+      ),
+      GoRoute(
+        path: Routes.booked,
+        // Only reachable straight after a booking; otherwise show the visits.
+        redirect: (_, state) =>
+            state.extra is BookedArgs ? null : Routes.visits,
+        builder: (_, state) => BookedScreen(args: state.extra! as BookedArgs),
       ),
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => HomeShell(navigationShell: shell),

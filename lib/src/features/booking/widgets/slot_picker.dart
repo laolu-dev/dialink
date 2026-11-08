@@ -353,10 +353,18 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
           );
 
     switch (result) {
-      case Success(:final value):
-        Toasts.success(value);
+      case Success():
         if (!mounted) return _Outcome.booked;
-        context.go(Routes.visits);
+        // Replaces this screen: going back shouldn't offer the taken time.
+        context.pushReplacement(
+          Routes.booked,
+          extra: BookedArgs(
+            provider: _provider,
+            when: AppTime.dateTime(slot.startTime, _provider.timeZone),
+            reason: _isReschedule ? null : reason.text.trim(),
+            moved: _isReschedule,
+          ),
+        );
         return _Outcome.booked;
       case Failure(:final value):
         if (!mounted) return _Outcome.failed;
