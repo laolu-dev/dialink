@@ -110,6 +110,9 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
         ? _day
         : (byDay.keys.isEmpty ? null : byDay.keys.first);
 
+    // At large text sizes the header gives way, so the times stay in view.
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 16 * 1.3;
+
     return Column(
       children: [
         Expanded(
@@ -119,17 +122,25 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
               Row(
                 spacing: 12,
                 children: [
-                  InitialsAvatar(name: _provider.name, size: 52),
+                  if (!largeText)
+                    InitialsAvatar(name: _provider.name, size: 52),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _provider.name,
-                          style: context.textTheme.titleLarge,
+                          maxLines: largeText ? 2 : null,
+                          overflow: largeText ? TextOverflow.ellipsis : null,
+                          style: largeText
+                              ? context.textTheme.titleMedium
+                              : context.textTheme.titleLarge,
                         ),
                         Text(
                           "${_provider.specialty} · times in ${_provider.timeZone}",
+                          // Room for the time zone, which matters.
+                          maxLines: largeText ? 3 : null,
+                          overflow: largeText ? TextOverflow.ellipsis : null,
                           style: context.textTheme.bodyMedium!.copyWith(
                             color: p.muted,
                           ),
@@ -263,7 +274,7 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 420 ? 4 : 3;
+        final columns = _timeColumns(context, constraints.maxWidth);
         final width = (constraints.maxWidth - 8 * (columns - 1)) / columns;
 
         return Column(
@@ -281,6 +292,9 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
                       width: width,
                       child: _TimeTile(
                         label: AppTime.time(slot.startTime, _provider.timeZone),
+                        semanticLabel: DateFormat('EEEE d MMMM, HH:mm').format(
+                          AppTime.inZone(slot.startTime, _provider.timeZone),
+                        ),
                         selected: _selected?.startTime == slot.startTime,
                         onTap: () {
                           HapticFeedback.selectionClick();
@@ -394,6 +408,14 @@ class _SlotPickerState extends ConsumerState<SlotPicker> {
   }
 }
 
+/// Time tiles per row: as many as fit at about 88 dp each at normal text,
+/// growing with the text size, between 2 and 4.
+int _timeColumns(BuildContext context, double width) {
+  const gap = 8.0;
+  final tile = 88 * MediaQuery.textScalerOf(context).scale(16) / 16;
+  return ((width + gap) / (tile + gap)).floor().clamp(2, 4);
+}
+
 /// How a booking attempt ended.
 enum _Outcome {
   booked,
@@ -438,18 +460,24 @@ class _DayTile extends StatelessWidget {
           color: selected ? p.primary : null,
           borderColor: selected ? p.primary : null,
           onTap: available ? onTap : null,
-          child: Column(
-            children: [
-              Text(
-                DateFormat('EEE').format(date),
-                maxLines: 1,
-                style: context.textTheme.labelSmall!.copyWith(color: fg),
-              ),
-              Text(
-                "${date.day}",
-                style: context.textTheme.titleMedium!.copyWith(color: fg),
-              ),
-            ],
+          // Seven tiles share the row; at large text the labels shrink to
+          // fit rather than clip. Screen readers get the full date above.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              children: [
+                Text(
+                  DateFormat('EEE').format(date),
+                  maxLines: 1,
+                  style: context.textTheme.labelSmall!.copyWith(color: fg),
+                ),
+                Text(
+                  "${date.day}",
+                  maxLines: 1,
+                  style: context.textTheme.titleMedium!.copyWith(color: fg),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -460,11 +488,15 @@ class _DayTile extends StatelessWidget {
 class _TimeTile extends StatelessWidget {
   const _TimeTile({
     required this.label,
+    required this.semanticLabel,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+
+  /// The day and time, since "10:00" alone doesn't say which day.
+  final String semanticLabel;
   final bool selected;
   final VoidCallback onTap;
 
@@ -474,9 +506,12 @@ class _TimeTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      label: semanticLabel,
+      excludeSemantics: true,
       child: AppSurface(
         radius: 14,
-        padding: const EdgeInsets.symmetric(vertical: 13),
+        // At least 48 dp tall: Android's minimum target, above iOS's 44.
+        padding: const EdgeInsets.symmetric(vertical: 14),
         color: selected ? p.primary : null,
         borderColor: selected ? p.primary : null,
         onTap: onTap,
@@ -625,7 +660,7 @@ class _TimesSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 420 ? 4 : 3;
+        final columns = _timeColumns(context, constraints.maxWidth);
         final width = (constraints.maxWidth - 8 * (columns - 1)) / columns;
         Widget tiles(int count) => Wrap(
           spacing: 8,
