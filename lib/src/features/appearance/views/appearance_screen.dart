@@ -71,6 +71,11 @@ class AppearanceScreen extends ConsumerWidget {
           const SectionLabel("Mode"),
           SegmentedButton<ThemeMode>(
             showSelectedIcon: false,
+            // At large text three side-by-side segments can't hold "System"
+            // whole; stack them instead.
+            direction: MediaQuery.textScalerOf(context).scale(16) > 16 * 1.3
+                ? Axis.vertical
+                : Axis.horizontal,
             segments: const [
               ButtonSegment(value: ThemeMode.system, label: Text("System")),
               ButtonSegment(value: ThemeMode.light, label: Text("Light")),
