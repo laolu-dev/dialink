@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:intl/intl.dart';
 
 import 'package:dialink/src/app/theme/app_palette.dart';
 import 'package:dialink/src/core/network/result.dart';
@@ -102,6 +103,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(accountControllerProvider);
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 16 * 1.3;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -141,11 +143,17 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
               inputType: TextInputType.phone,
               validator: (value) => Validators.phone(value!, optional: true),
             ),
-            Row(
-              spacing: 12,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Side by side normally; stacked at large text, where half the
+            // width can't hold "Select" or a full date.
+            Flex(
+              direction: largeText ? Axis.vertical : Axis.horizontal,
+              spacing: largeText ? 0 : 12,
+              crossAxisAlignment: largeText
+                  ? CrossAxisAlignment.stretch
+                  : CrossAxisAlignment.start,
               children: [
-                Expanded(
+                _half(
+                  stacked: largeText,
                   child: AppDropdown(
                     label: "Gender",
                     hint: "Select",
@@ -155,7 +163,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
                         .toList(),
                   ),
                 ),
-                Expanded(child: _buildDob()),
+                _half(stacked: largeText, child: _buildDob()),
               ],
             ),
             AppTextField(
@@ -172,10 +180,15 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
               controller: contactName,
               validator: (_) => _contactValidator(),
             ),
-            Row(
-              spacing: 12,
+            Flex(
+              direction: largeText ? Axis.vertical : Axis.horizontal,
+              spacing: largeText ? 0 : 12,
+              crossAxisAlignment: largeText
+                  ? CrossAxisAlignment.stretch
+                  : CrossAxisAlignment.start,
               children: [
-                Flexible(
+                _part(
+                  stacked: largeText,
                   flex: 3,
                   child: AppTextField(
                     label: "Phone",
@@ -187,7 +200,8 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
                         : Validators.phone(value!),
                   ),
                 ),
-                Flexible(
+                _part(
+                  stacked: largeText,
                   flex: 2,
                   child: AppTextField(
                     label: "Relationship",
@@ -219,42 +233,61 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
     );
   }
 
-  Widget _buildDob() {
-    return Column(
-      spacing: 4,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Date of birth", style: context.textTheme.labelLarge),
-        InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () async {
-            final now = DateTime.now();
-            final date = await showDatePicker(
-              context: context,
-              initialDate: dob.value ?? DateTime(now.year - 30),
-              firstDate: DateTime(1900),
-              lastDate: now.subtract(const Duration(days: 1)),
-            );
+  /// Half the row, or the full width when [stacked].
+  Widget _half({required bool stacked, required Widget child}) =>
+      _part(stacked: stacked, flex: 1, child: child);
 
-            if (date != null) {
-              dob.value = date;
-            }
-          },
-          child: InputDecorator(
-            decoration: InputDecoration(
-              suffixIcon: Icon(Iconsax.calendar_1, size: 20),
-            ),
-            child: ValueListenableBuilder(
-              valueListenable: dob,
-              builder: (context, date, _) => Text(
-                date == null ? "Select" : AppTime.apiDate(date),
-                style: context.textTheme.bodyLarge,
+  /// [flex] parts of the row, or the full width when [stacked].
+  Widget _part({
+    required bool stacked,
+    required int flex,
+    required Widget child,
+  }) => stacked ? child : Expanded(flex: flex, child: child);
+
+  Widget _buildDob() {
+    // One node for screen readers: "Date of birth, 12 April 1996, button".
+    return MergeSemantics(
+      child: Column(
+        spacing: 6,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Date of birth", style: context.textTheme.labelLarge),
+          Semantics(
+            button: true,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () async {
+                final now = DateTime.now();
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: dob.value ?? DateTime(now.year - 30),
+                  firstDate: DateTime(1900),
+                  lastDate: now.subtract(const Duration(days: 1)),
+                );
+
+                if (date != null) {
+                  dob.value = date;
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  suffixIcon: Icon(Iconsax.calendar_1, size: 20),
+                ),
+                child: ValueListenableBuilder(
+                  valueListenable: dob,
+                  builder: (context, date, _) => Text(
+                    date == null
+                        ? "Select"
+                        : DateFormat('d MMMM y').format(date),
+                    style: context.textTheme.bodyLarge,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        14.0.verticalSpacing,
-      ],
+          14.0.verticalSpacing,
+        ],
+      ),
     );
   }
 
