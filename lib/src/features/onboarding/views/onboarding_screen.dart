@@ -137,7 +137,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   for (var i = 0; i < _pages.length; i++)
                     AnimatedContainer(
-                      duration: Durations.short4,
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : Durations.short4,
                       width: i == _page ? 24 : 8,
                       height: 8,
                       decoration: BoxDecoration(

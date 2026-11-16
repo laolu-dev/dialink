@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -83,14 +84,19 @@ ThemeData buildTheme(
     canvasColor: p.background,
     dividerColor: p.border,
     extensions: [p],
-    pageTransitionsTheme: id.reduceMotion
-        ? const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: _NoTransitionsBuilder(),
-              TargetPlatform.iOS: _NoTransitionsBuilder(),
-            },
-          )
-        : const PageTransitionsTheme(),
+    // The platform's own transitions, crossfaded instead when motion is
+    // reduced: by the system setting, or by a theme such as Easy read (see
+    // app.dart, which folds both into MediaQuery.disableAnimations).
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: _ReducibleTransitionsBuilder(
+          PredictiveBackPageTransitionsBuilder(),
+        ),
+        TargetPlatform.iOS: _ReducibleTransitionsBuilder(
+          CupertinoPageTransitionsBuilder(),
+        ),
+      },
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       foregroundColor: p.text,
@@ -175,8 +181,13 @@ ThemeData buildTheme(
   );
 }
 
-class _NoTransitionsBuilder extends PageTransitionsBuilder {
-  const _NoTransitionsBuilder();
+/// [full] normally; a crossfade when animations are turned down. On iOS the
+/// crossfade keeps a left-edge swipe to go back, since the system gesture
+/// lives in the sliding transition it replaces.
+class _ReducibleTransitionsBuilder extends PageTransitionsBuilder {
+  const _ReducibleTransitionsBuilder(this.full);
+
+  final PageTransitionsBuilder full;
 
   @override
   Widget buildTransitions<T>(
@@ -185,5 +196,63 @@ class _NoTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
     Widget child,
-  ) => child;
+  ) {
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      return full.buildTransitions(
+        route,
+        context,
+        animation,
+        secondaryAnimation,
+        child,
+      );
+    }
+    final faded = FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: child,
+    );
+    return Theme.of(context).platform == TargetPlatform.iOS
+        ? _EdgeSwipeBack(route: route, child: faded)
+        : faded;
+  }
+}
+
+/// Goes back on a rightward swipe from the left edge, like iOS's own
+/// gesture, but completing on release rather than following the finger.
+class _EdgeSwipeBack extends StatefulWidget {
+  const _EdgeSwipeBack({required this.route, required this.child});
+
+  final PageRoute<dynamic> route;
+  final Widget child;
+
+  @override
+  State<_EdgeSwipeBack> createState() => _EdgeSwipeBackState();
+}
+
+class _EdgeSwipeBackState extends State<_EdgeSwipeBack> {
+  double _dragged = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.route.popGestureEnabled) return widget.child;
+    return Stack(
+      children: [
+        widget.child,
+        PositionedDirectional(
+          start: 0,
+          top: 0,
+          bottom: 0,
+          width: 20,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (_) => _dragged = 0,
+            onHorizontalDragUpdate: (details) => _dragged += details.delta.dx,
+            onHorizontalDragEnd: (details) {
+              final fast = (details.primaryVelocity ?? 0) > 300;
+              if (_dragged > 80 || fast) Navigator.of(context).maybePop();
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }

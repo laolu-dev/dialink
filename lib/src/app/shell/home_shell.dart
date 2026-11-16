@@ -188,7 +188,9 @@ class _TabItem extends StatelessWidget {
             spacing: 2,
             children: [
               AnimatedContainer(
-                duration: Durations.short4,
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : Durations.short4,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 4,
